@@ -8,9 +8,16 @@
 # Licence:  GPLv3
 # ---------------------------------------------
 # TaskList:
-#@TODO: Send mail on error.
-#@TODO: Move log to /var/log.
+#@TODO: Add cleanup mode, keep last x data.
+#@TODO: Send mail on error, add (e) email option.
+#@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
+#@TODO: Add SYNCRM, to sync and also delete.
+#@TODO: Move log to /var/log.
+#@TODO: Add 2 way SYNC2W to provide 2 way sync, the newer is taken.
+#@TODO: Add better log, calculate size moved / read.
+#@TODO: Add speed stat mo/s ko/s go/s.
+
 
 # Default variables {{{1
 # Flags :
