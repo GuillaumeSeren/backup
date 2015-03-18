@@ -27,7 +27,7 @@ cat << DOC
 
 usage: $0 options
 
-This script backup a folder as an archive in a location path.
+This script backup a target in a location path.
 
 
 OPTIONS:
@@ -40,9 +40,16 @@ OPTIONS:
         -Remote :
             - ssh_alias:~/foo
             - user@127.0.0.1:~/foo
+    -m  Define mode, can be:
+        "TARB": Create a tarball. (LOCAL ONLY)
+        "SYNC": Sync 2 directory (default).
+                Note that the sync is 1 way (from -> to).
 
 Sample:
-    $0 -f server:/var/www/foo -t /var/save/foo/
+    Sync 2 directory
+    $0 -f server:/var/www/foo -t /var/save/bar/ -m SYNC
+    Make a tarball of a path, save it in the location.
+    $0 -f server:/var/www/foo -t /var/save/dump/ -m TARB
 
 DOC
 }
@@ -57,7 +64,7 @@ function log() {
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts "f:t:h" OPTION
+while getopts "f:t:m:h" OPTION
 do
     flag_getopts=1
     case $OPTION in
@@ -70,6 +77,9 @@ do
         ;;
     t)
         cmdTo=$OPTARG
+        ;;
+    m)
+        cmdMode=$OPTARG
         ;;
     ?)
         echo "commande $1 inconnue"
@@ -85,12 +95,38 @@ if [ $flag_getopts == 0 ]; then
     exit 1
 fi
 
+# Function getUniqueName {{{1
+function getUniqueName() {
+    datenow=$(date +"%Y%m%d-%H:%M:%S")
+    if [[ -n $1 && $1 != "" ]]; then
+        # The name is derivative from the target pathname
+        # but you can give other things
+        uniqueName="$1"
+    else
+        uniqueName="$1"
+    fi
+    echo "$1_$datenow"
+}
+
 # FUNCTION main() {{{1
 function main() {
     # simple timing
     timeStart=$(date +"%s")
     log "Save $cmdFrom Start"
-    log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+    if [[ -n $cmdMode && $cmdMode == "SYNC" ]]; then
+        log "MODE SYNC"
+        log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+    elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
+        log "MODE TARBALL"
+        #@FIXME: It would be better to expand path like ~
+        pathName=$(basename "$cmdFrom")
+        tarName=$(getUniqueName $pathName)
+        log  "$(tar -zcf $cmdTo/$tarName.tar.gz -C ${cmdFrom%$pathName} $pathName/)"
+    else
+        log "MODE SYNC"
+        log "Default mode"
+        log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+    fi
     timeEnd=$(date +"%s")
     log "duration (sec): $(($timeEnd - $timeStart))"
     log "Save $cmdFrom End."
