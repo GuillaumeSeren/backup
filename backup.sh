@@ -19,6 +19,11 @@
 #@TODO: Add speed stat mo/s ko/s go/s.
 
 
+# Error Codes {{{1
+# 0 - Ok
+# 1 - Error in cmd / options
+# 2 - Error log file
+
 # Default variables {{{1
 # Flags :
 flag_getopts=0
@@ -64,6 +69,29 @@ DOC
 # FUNCTION log {{{1
 function log() {
     datenow=$(date +"%Y%m%d-%H:%M:%S")
+    # We need to check if the file is available
+    if [ ! -f $logfile ]; then
+        #@FIXME: We need to save this log in a array, to write it when log is
+        #open.
+
+        earlyLog="Creation log file: $logfile"
+        #echo $earlyLog
+        touch $logfile
+    fi
+    # test if it is writeable
+    # Export the create / open / check file outside
+    if [ ! -w $logfile ]; then
+        # exit here
+        echo "The log file is not writeable, please check permissions."
+        exit 2
+#    else
+#        echo "the log is writeable"
+        ## Let's see if we miss some log
+        #if [[ -n $earlyLog && $earlyLog != "" ]]; then
+        #    echo "$datenow $earlyLog" >> $logfile 2>&1
+        #    unset $earlyLog
+        #fi
+    fi
     if [[ -n "$1" && "$1" != "" ]]; then
         echo "$datenow $1" >> $logfile 2>&1
     fi
