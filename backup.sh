@@ -66,32 +66,36 @@ Sample:
 DOC
 }
 
+# FUNCION createLogFile() {{{1
+function createLogFile() {
+    # Touch the file
+    if [ ! -f $logfile ]; then
+        earlyLog="Creation log file: $logfile"
+        touch $logfile
+    fi
+    # If the file is still no variable
+    if [ ! -w $logfile ]; then
+        echo "The log file is not writeable, please check permissions."
+        exit 2
+    fi
+    echo $earlyLog
+}
+
 # FUNCTION log {{{1
 function log() {
     datenow=$(date +"%Y%m%d-%H:%M:%S")
     # We need to check if the file is available
-    if [ ! -f $logfile ]; then
-        #@FIXME: We need to save this log in a array, to write it when log is
-        #open.
-
-        earlyLog="Creation log file: $logfile"
-        #echo $earlyLog
-        touch $logfile
+    if [[ ! -w $logfile ]]; then
+        earlyLog=$(createLogFile)
+    fi
+    # Do we have some early log to catch
+    if [[ -n $earlyLog && $earlyLog != "" ]]; then
+        echo "$datenow $earlyLog" >> $logfile 2>&1
+        # Clear earlyLog after displaying it
+        unset earlyLog
     fi
     # test if it is writeable
     # Export the create / open / check file outside
-    if [ ! -w $logfile ]; then
-        # exit here
-        echo "The log file is not writeable, please check permissions."
-        exit 2
-#    else
-#        echo "the log is writeable"
-        ## Let's see if we miss some log
-        #if [[ -n $earlyLog && $earlyLog != "" ]]; then
-        #    echo "$datenow $earlyLog" >> $logfile 2>&1
-        #    unset $earlyLog
-        #fi
-    fi
     if [[ -n "$1" && "$1" != "" ]]; then
         echo "$datenow $1" >> $logfile 2>&1
     fi
@@ -150,7 +154,7 @@ function main() {
     log "Save $cmdFrom Start"
     if [[ -n $cmdMode && $cmdMode == "SYNC" ]]; then
         log "MODE SYNC"
-        log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+        log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
         log "MODE TARBALL"
         #@FIXME: It would be better to expand path like ~
