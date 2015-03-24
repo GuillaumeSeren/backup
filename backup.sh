@@ -156,7 +156,7 @@ function getUniqueName() {
 function main() {
     # simple timing
     timeStart=$(date +"%s")
-    log "Save $cmdFrom Start"
+    log "Save $cmdFrom to $cmdTo Start"
     if [[ -n $cmdMode && $cmdMode == "SYNC" ]]; then
         log "MODE SYNC"
         log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
