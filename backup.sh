@@ -8,6 +8,7 @@
 # Licence:  GPLv3
 # ---------------------------------------------
 # TaskList:
+#@TODO: Add a lock file.
 #@TODO: Add cleanup mode, keep last x data.
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a id to the log, by adding the timestamp in hex.
@@ -34,10 +35,6 @@ logpath=$(dirname $0)
 lockFile="$logpath/"$(echo "$@" | sha1sum | cut -d ' ' -f1)".lock"
 logfile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
 logfile="$logpath/${logfile%.*}.log"
-
-#echo ${0#/}
-#echo $logfile
-#exit 44
 
 # FUNCTION usage() {{{1
 # Return the helping message for the use.
