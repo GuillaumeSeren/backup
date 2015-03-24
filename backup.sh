@@ -28,8 +28,13 @@
 # Flags :
 flag_getopts=0
 datenow=$(date +"%Y%m%d-%H:%M:%S")
-logpath=$(pwd $0)
-logfile="$logpath/${0%.*}.log"
+logpath=$(dirname $0)
+logfile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
+logfile="$logpath/${logfile%.*}.log"
+
+#echo ${0#/}
+#echo $logfile
+#exit 44
 
 # FUNCTION usage() {{{1
 # Return the helping message for the use.
