@@ -10,6 +10,7 @@
 # TaskList:
 #@TODO: Add cleanup mode, keep last x data.
 #@TODO: Send mail on error, add (e) email option.
+#@TODO: Add a id to the log, by adding the timestamp in hex.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
 #@TODO: Add SYNCRM, to sync and also delete.
@@ -23,12 +24,14 @@
 # 0 - Ok
 # 1 - Error in cmd / options
 # 2 - Error log file
+# 3 - The last call is still running
 
 # Default variables {{{1
 # Flags :
 flag_getopts=0
 datenow=$(date +"%Y%m%d-%H:%M:%S")
 logpath=$(dirname $0)
+lockFile="$logpath/"$(echo "$@" | sha1sum | cut -d ' ' -f1)".lock"
 logfile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
 logfile="$logpath/${logfile%.*}.log"
 
@@ -157,6 +160,17 @@ function main() {
     # simple timing
     timeStart=$(date +"%s")
     log "Save $cmdFrom to $cmdTo Start"
+    # Check the lock
+    if [ -f $lockFile ]; then
+        # The last call is still running
+        echo "The last call is still running"
+        lockFileContent=$(cat $lockFile)
+        echo "Running since $(date -d @$lockFileContent)"
+        exit 3
+    fi
+    log "creating the lock file: $lockFile"
+    touch $lockFile
+    echo $timeStart > $lockFile
     if [[ -n $cmdMode && $cmdMode == "SYNC" ]]; then
         log "MODE SYNC"
         log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
@@ -173,6 +187,8 @@ function main() {
     fi
     timeEnd=$(date +"%s")
     log "duration (sec): $(($timeEnd - $timeStart))"
+    log "cleaning the lock file: $lockFile"
+    rm $lockFile
     log "Save $cmdFrom End."
 }
 
