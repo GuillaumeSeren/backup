@@ -11,7 +11,6 @@
 #@TODO: Add a lock file.
 #@TODO: Add cleanup mode, keep last x data.
 #@TODO: Send mail on error, add (e) email option.
-#@TODO: Add a id to the log, by adding the timestamp in hex.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
 #@TODO: Add SYNCRM, to sync and also delete.
@@ -95,14 +94,14 @@ function log() {
     fi
     # Do we have some early log to catch
     if [[ -n $earlyLog && $earlyLog != "" ]]; then
-        echo "$datenow $earlyLog" >> $logfile 2>&1
+        echo "$datenow $idScriptCall $earlyLog" >> $logfile 2>&1
         # Clear earlyLog after displaying it
         unset earlyLog
     fi
     # test if it is writeable
     # Export the create / open / check file outside
     if [[ -n "$1" && "$1" != "" ]]; then
-        echo "$datenow $1" >> $logfile 2>&1
+        echo "$datenow $idScriptCall $1" >> $logfile 2>&1
     fi
 }
 
@@ -156,6 +155,8 @@ function getUniqueName() {
 function main() {
     # simple timing
     timeStart=$(date +"%s")
+    # Encode the timestamp of the start in hex to make a id.
+    idScriptCall=$(printf "%x\n" $timeStart)
     log "Save $cmdFrom to $cmdTo Start"
     # Check the lock
     if [ -f $lockFile ]; then
@@ -183,10 +184,10 @@ function main() {
         log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
     fi
     timeEnd=$(date +"%s")
-    log "duration (sec): $(($timeEnd - $timeStart))"
     log "cleaning the lock file: $lockFile"
     rm $lockFile
-    log "Save $cmdFrom End."
+    log "duration (sec): $(($timeEnd - $timeStart))"
+    log "Save $cmdFrom to $cmdTo End"
 }
 
 main

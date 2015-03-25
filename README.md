@@ -8,9 +8,11 @@ Simple backup script for everyday use, focus on efficiency and portability.
 I wanted to share my backup script, and also complete it to fit most,
 of common need, like:
 
-- Save a directory as an archive, auto generate a unique name.
 - Sync 2 directory content.
+- Save a directory or file as an archive.
+- Auto generate a unique name for the archive (based on the time).
 - Output a clean log to track events, time and duration.
+- Add a lock file to track already running task.
 
 ## Philosophy :
 Try to keep things simple as in `KISS` mantra (*Keep It Simple, Stupid*),
