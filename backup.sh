@@ -8,17 +8,15 @@
 # Licence:  GPLv3
 # ---------------------------------------------
 # TaskList:
-#@TODO: Add a lock file.
 #@TODO: Add cleanup mode, keep last x data.
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
 #@TODO: Add SYNCRM, to sync and also delete.
-#@TODO: Move log to /var/log.
 #@TODO: Add 2 way SYNC2W to provide 2 way sync, the newer is taken.
 #@TODO: Add better log, calculate size moved / read.
+#@TODO: Move log to /var/log.
 #@TODO: Add speed stat mo/s ko/s go/s.
-
 
 # Error Codes {{{1
 # 0 - Ok
@@ -28,12 +26,14 @@
 
 # Default variables {{{1
 # Flags :
-flag_getopts=0
-datenow=$(date +"%Y%m%d-%H:%M:%S")
-logpath=$(dirname $0)
-lockFile="$logpath/"$(echo "$@" | sha1sum | cut -d ' ' -f1)".lock"
-logfile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
-logfile="$logpath/${logfile%.*}.log"
+flagGetOpts=0
+dateNow=$(date +"%Y%m%d-%H:%M:%S")
+logPath=$(dirname $0)
+lockFile="$logPath/"$(echo "$@" | sha1sum | cut -d ' ' -f1)".lock"
+logFile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
+logFile="$logPath/${logFile%.*}.log"
+# simple timing
+timeStart=$(date +"%s")
 
 # FUNCTION usage() {{{1
 # Return the helping message for the use.
@@ -70,15 +70,15 @@ Sample:
 DOC
 }
 
-# FUNCION createLogFile() {{{1
+# FUNCION createlogFile() {{{1
 function createLogFile() {
     # Touch the file
-    if [ ! -f $logfile ]; then
-        earlyLog="Creation log file: $logfile"
-        touch $logfile
+    if [ ! -f $logFile ]; then
+        earlyLog="Creation log file: $logFile"
+        touch $logFile
     fi
     # If the file is still no variable
-    if [ ! -w $logfile ]; then
+    if [ ! -w $logFile ]; then
         echo "The log file is not writeable, please check permissions."
         exit 2
     fi
@@ -87,21 +87,21 @@ function createLogFile() {
 
 # FUNCTION log {{{1
 function log() {
-    datenow=$(date +"%Y%m%d-%H:%M:%S")
+    dateNow=$(date +"%Y%m%d-%H:%M:%S")
     # We need to check if the file is available
-    if [[ ! -w $logfile ]]; then
+    if [[ ! -w $logFile ]]; then
         earlyLog=$(createLogFile)
     fi
     # Do we have some early log to catch
     if [[ -n $earlyLog && $earlyLog != "" ]]; then
-        echo "$datenow $idScriptCall $earlyLog" >> $logfile 2>&1
+        echo "$dateNow $idScriptCall $earlyLog" >> $logFile 2>&1
         # Clear earlyLog after displaying it
         unset earlyLog
     fi
     # test if it is writeable
     # Export the create / open / check file outside
     if [[ -n "$1" && "$1" != "" ]]; then
-        echo "$datenow $idScriptCall $1" >> $logfile 2>&1
+        echo "$dateNow $idScriptCall $1" >> $logFile 2>&1
     fi
 }
 
@@ -109,7 +109,7 @@ function log() {
 # Get the param of the script.
 while getopts "f:t:m:h" OPTION
 do
-    flag_getopts=1
+    flagGetOpts=1
     case $OPTION in
     h)
         usage
@@ -132,7 +132,7 @@ do
     esac
 done
 # We check if getopts did not find no any param
-if [ $flag_getopts == 0 ]; then
+if [ $flagGetOpts == 0 ]; then
     echo 'This script cannot be launched without options.'
     usage
     exit 1
@@ -140,7 +140,7 @@ fi
 
 # Function getUniqueName {{{1
 function getUniqueName() {
-    datenow=$(date +"%Y%m%d-%H:%M:%S")
+    dateNow=$(date +"%Y%m%d-%H:%M:%S")
     if [[ -n $1 && $1 != "" ]]; then
         # The name is derivative from the target pathname
         # but you can give other things
@@ -148,13 +148,12 @@ function getUniqueName() {
     else
         uniqueName="$1"
     fi
-    echo "$1_$datenow"
+    echo "$1_$dateNow"
 }
+
 
 # FUNCTION main() {{{1
 function main() {
-    # simple timing
-    timeStart=$(date +"%s")
     # Encode the timestamp of the start in hex to make a id.
     idScriptCall=$(printf "%x\n" $timeStart)
     log "Save $cmdFrom to $cmdTo Start"
