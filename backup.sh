@@ -7,8 +7,12 @@
 # file:     backup.sh
 # Licence:  GPLv3
 # ---------------------------------------------
-# TaskList:
-#@TODO: Add cleanup mode, keep last x data.
+
+# TaskList {{{1
+#@TODO: Count the files on a given period (day/week/month/year).
+#@TODO: Add the getFileNameNotOn period 2 timestamp
+#@TODO: Keep only the last archive, add the other to the clean list.
+#@TODO: Count the number and size freed by the cleaning, log it.
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
@@ -23,6 +27,7 @@
 # 1 - Error in cmd / options
 # 2 - Error log file
 # 3 - The last call is still running
+# 4 - The getFileNameByDay is called with no filename (first parm).
 
 # Default variables {{{1
 # Flags :
@@ -138,7 +143,7 @@ if [ $flagGetOpts == 0 ]; then
     exit 1
 fi
 
-# Function getUniqueName {{{1
+# FUNCTION getUniqueName {{{1
 function getUniqueName() {
     dateNow=$(date +"%Y%m%d-%H:%M:%S")
     if [[ -n $1 && $1 != "" ]]; then
@@ -151,6 +156,63 @@ function getUniqueName() {
     echo "$1_$dateNow"
 }
 
+# Function getFileNameOnDay() {{{1
+# Return the filename if the date pattern is on a given day (default today).
+function getFileNameOnDay() {
+    # Check the filename
+    if [[ -z $1 && $1 == "" ]]; then
+        echo "Error: You can not call the getFileNameByDay witheout filename"
+        cleanLockFile
+        exit 4
+    fi
+    # Check the date (day)
+    if [[ -n $2 && $2 != "" ]]; then
+        #@TODO: Add a regex to validate the format
+        dateDay="$2"
+    else
+        # Take today by default
+        dateDay="$(date +"%Y%m%d")"
+    fi
+    # Let's check if the filename contain the chosen date:
+    if [[ "${1}" =~ ^$dateDay-.*+$ ]]; then
+        # echo "Find result: ${1}"
+        echo "${1}"
+    fi
+}
+
+# Function getFileNotOnDay() {{{1
+# Return the filename if the date pattern is not on a given day (default today).
+function getFileNameNotOnDay() {
+    # Check the filename
+    if [[ -z $1 && $1 == "" ]]; then
+        echo "Error: You can not call the getFileNameNotOnDay witheout filename"
+        cleanLockFile
+        exit 4
+    fi
+    # Check the date (day)
+    if [[ -n $2 && $2 != "" ]]; then
+        #@TODO: Add a regex to validate the format
+        dateDay="$2"
+    else
+        # Take today by default
+        dateDay="$(date +"%Y%m%d")"
+    fi
+    # Let's check if the filename contain the chosen date:
+    if [[ ! "${1}" =~ ^$dateDay-.*+$ ]]; then
+        # echo "Find result: ${1}"
+        echo "${1}"
+    fi
+}
+
+# fuction cleanLockFile() {{{1
+# clean lock file.
+function cleanLockFile() {
+    # test if lock file has well been made
+    if [[ -n $lockFile && $lockFile != "" ]]; then
+        log "cleaning the lock file: $lockFile"
+        rm $lockFile
+    fi
+}
 
 # FUNCTION main() {{{1
 function main() {
@@ -177,14 +239,35 @@ function main() {
         pathName=$(basename "$cmdFrom")
         tarName=$(getUniqueName $pathName)
         log  "$(tar -zcf $cmdTo/$tarName.tar.gz -C ${cmdFrom%$pathName} $pathName/)"
+    elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
+        log "MODE CLEAN"
+        # echo "We are going to need the name without date"
+        pathName=$(basename "$cmdFrom")
+        # List all files by name
+        fileList=($(\ls $cmdTo/$pathName*))
+        declare -a aTest
+        for (( i=0; i<${#fileList[@]}; i++ ))
+        do
+            # Check file not today for the clean
+            fileMatch=$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")
+            if [[ -n $fileMatch && $fileMatch != "" ]]; then
+                # There was a match
+                aTest+=(${fileList[$i]})
+            fi
+        done
+        log "File list done"
+        for (( i=0; i<${#aTest[@]}; i++ ))
+        do
+            # Cleaning loop
+            echo "rm ${aTest[$i]}"
+        done
     else
         log "MODE SYNC"
         log "Default mode"
         log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
     fi
     timeEnd=$(date +"%s")
-    log "cleaning the lock file: $lockFile"
-    rm $lockFile
+    cleanLockFile
     log "duration (sec): $(($timeEnd - $timeStart))"
     log "Save $cmdFrom to $cmdTo End"
 }
