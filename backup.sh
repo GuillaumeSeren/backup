@@ -7,33 +7,39 @@
 # file:     backup.sh
 # Licence:  GPLv3
 # ---------------------------------------------
-# TaskList:
-#@TODO: Add a lock file.
-#@TODO: Add cleanup mode, keep last x data.
+
+# TaskList {{{1
+#@FIXME: Better clean of the cmdTo path, to avoid // .
+#@TODO: Count the files on a given period (day/week/month/year).
+#@TODO: Add the getFileNameNotOn period 2 timestamp
+#@TODO: Keep only the last archive, add the other to the clean list.
+#@TODO: Count the number and size freed by the cleaning, log it.
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
 #@TODO: Add SYNCRM, to sync and also delete.
-#@TODO: Move log to /var/log.
 #@TODO: Add 2 way SYNC2W to provide 2 way sync, the newer is taken.
 #@TODO: Add better log, calculate size moved / read.
+#@TODO: Move log to /var/log.
 #@TODO: Add speed stat mo/s ko/s go/s.
-
 
 # Error Codes {{{1
 # 0 - Ok
 # 1 - Error in cmd / options
 # 2 - Error log file
 # 3 - The last call is still running
+# 4 - The getFileNameByDay is called with no filename (first parm).
 
 # Default variables {{{1
 # Flags :
-flag_getopts=0
-datenow=$(date +"%Y%m%d-%H:%M:%S")
-logpath=$(dirname $0)
-lockFile="$logpath/"$(echo "$@" | sha1sum | cut -d ' ' -f1)".lock"
-logfile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
-logfile="$logpath/${logfile%.*}.log"
+flagGetOpts=0
+dateNow=$(date +"%Y%m%d-%H:%M:%S")
+logPath=$(dirname $0)
+lockFile="$logPath/"$(echo "$@" | sha1sum | cut -d ' ' -f1)".lock"
+logFile=$(echo "$0" | rev | cut -d"/" -f1 | rev)
+logFile="$logPath/${logFile%.*}.log"
+# simple timing
+timeStart=$(date +"%s")
 
 # FUNCTION usage() {{{1
 # Return the helping message for the use.
@@ -70,15 +76,15 @@ Sample:
 DOC
 }
 
-# FUNCION createLogFile() {{{1
+# FUNCION createlogFile() {{{1
 function createLogFile() {
     # Touch the file
-    if [ ! -f $logfile ]; then
-        earlyLog="Creation log file: $logfile"
-        touch $logfile
+    if [ ! -f $logFile ]; then
+        earlyLog="Creation log file: $logFile"
+        touch $logFile
     fi
     # If the file is still no variable
-    if [ ! -w $logfile ]; then
+    if [ ! -w $logFile ]; then
         echo "The log file is not writeable, please check permissions."
         exit 2
     fi
@@ -87,21 +93,21 @@ function createLogFile() {
 
 # FUNCTION log {{{1
 function log() {
-    datenow=$(date +"%Y%m%d-%H:%M:%S")
+    dateNow=$(date +"%Y%m%d-%H:%M:%S")
     # We need to check if the file is available
-    if [[ ! -w $logfile ]]; then
+    if [[ ! -w $logFile ]]; then
         earlyLog=$(createLogFile)
     fi
     # Do we have some early log to catch
     if [[ -n $earlyLog && $earlyLog != "" ]]; then
-        echo "$datenow $idScriptCall $earlyLog" >> $logfile 2>&1
+        echo "$dateNow $idScriptCall $earlyLog" >> $logFile 2>&1
         # Clear earlyLog after displaying it
         unset earlyLog
     fi
     # test if it is writeable
     # Export the create / open / check file outside
     if [[ -n "$1" && "$1" != "" ]]; then
-        echo "$datenow $idScriptCall $1" >> $logfile 2>&1
+        echo "$dateNow $idScriptCall $1" >> $logFile 2>&1
     fi
 }
 
@@ -109,7 +115,7 @@ function log() {
 # Get the param of the script.
 while getopts "f:t:m:h" OPTION
 do
-    flag_getopts=1
+    flagGetOpts=1
     case $OPTION in
     h)
         usage
@@ -132,15 +138,15 @@ do
     esac
 done
 # We check if getopts did not find no any param
-if [ $flag_getopts == 0 ]; then
+if [ $flagGetOpts == 0 ]; then
     echo 'This script cannot be launched without options.'
     usage
     exit 1
 fi
 
-# Function getUniqueName {{{1
+# FUNCTION getUniqueName {{{1
 function getUniqueName() {
-    datenow=$(date +"%Y%m%d-%H:%M:%S")
+    dateNow=$(date +"%Y%m%d-%H:%M:%S")
     if [[ -n $1 && $1 != "" ]]; then
         # The name is derivative from the target pathname
         # but you can give other things
@@ -148,13 +154,69 @@ function getUniqueName() {
     else
         uniqueName="$1"
     fi
-    echo "$1_$datenow"
+    echo "$1_$dateNow"
+}
+
+# Function getFileNameOnDay() {{{1
+# Return the filename if the date pattern is on a given day (default today).
+function getFileNameOnDay() {
+    # Check the filename
+    if [[ -z $1 && $1 == "" ]]; then
+        echo "Error: You can not call the getFileNameByDay witheout filename"
+        cleanLockFile
+        exit 4
+    fi
+    # Check the date (day)
+    if [[ -n $2 && $2 != "" ]]; then
+        #@TODO: Add a regex to validate the format
+        dateDay="$2"
+    else
+        # Take today by default
+        dateDay="$(date +"%Y%m%d")"
+    fi
+    # Let's check if the filename contain the chosen date:
+    if [[ "${1}" =~ ^$dateDay-.*+$ ]]; then
+        # echo "Find result: ${1}"
+        echo "${1}"
+    fi
+}
+
+# Function getFileNotOnDay() {{{1
+# Return the filename if the date pattern is not on a given day (default today).
+function getFileNameNotOnDay() {
+    # Check the filename
+    if [[ -z $1 && $1 == "" ]]; then
+        echo "Error: You can not call the getFileNameNotOnDay witheout filename"
+        cleanLockFile
+        exit 4
+    fi
+    # Check the date (day)
+    if [[ -n $2 && $2 != "" ]]; then
+        #@TODO: Add a regex to validate the format
+        dateDay="$2"
+    else
+        # Take today by default
+        dateDay="$(date +"%Y%m%d")"
+    fi
+    # Let's check if the filename contain the chosen date:
+    if [[ ! "${1}" =~ ^$dateDay-.*+$ ]]; then
+        # echo "Find result: ${1}"
+        echo "${1}"
+    fi
+}
+
+# fuction cleanLockFile() {{{1
+# clean lock file.
+function cleanLockFile() {
+    # test if lock file has well been made
+    if [[ -n $lockFile && $lockFile != "" ]]; then
+        log "cleaning the lock file: $lockFile"
+        rm $lockFile
+    fi
 }
 
 # FUNCTION main() {{{1
 function main() {
-    # simple timing
-    timeStart=$(date +"%s")
     # Encode the timestamp of the start in hex to make a id.
     idScriptCall=$(printf "%x\n" $timeStart)
     log "Save $cmdFrom to $cmdTo Start"
@@ -178,14 +240,36 @@ function main() {
         pathName=$(basename "$cmdFrom")
         tarName=$(getUniqueName $pathName)
         log  "$(tar -zcf $cmdTo/$tarName.tar.gz -C ${cmdFrom%$pathName} $pathName/)"
+    elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
+        log "MODE CLEAN"
+        # echo "We are going to need the name without date"
+        pathName=$(basename "$cmdFrom")
+        # List all files by name
+        fileList=($(\find $cmdTo/ -maxdepth 1 -type f -name "$pathName*.tar.gz" ))
+        declare -a aTest
+        for (( i=0; i<${#fileList[@]}; i++ ))
+        do
+            # Check file not today for the clean
+            fileMatch=$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")
+            if [[ -n $fileMatch && $fileMatch != "" ]]; then
+                # There was a match
+                aTest+=(${fileList[$i]})
+            fi
+        done
+        log "Clean list done: ${#aTest[@]} item(s)"
+        # Cleaning loop
+        for (( i=0; i<${#aTest[@]}; i++ ))
+        do
+            log "rm ${aTest[$i]}"
+            rm ${aTest[$i]}
+        done
     else
         log "MODE SYNC"
         log "Default mode"
         log "$(rsync -avz --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
     fi
     timeEnd=$(date +"%s")
-    log "cleaning the lock file: $lockFile"
-    rm $lockFile
+    cleanLockFile
     log "duration (sec): $(($timeEnd - $timeStart))"
     log "Save $cmdFrom to $cmdTo End"
 }
