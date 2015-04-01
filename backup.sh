@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+#@FIXME: Better clean of the cmdTo path, to avoid // .
 #@TODO: Count the files on a given period (day/week/month/year).
 #@TODO: Add the getFileNameNotOn period 2 timestamp
 #@TODO: Keep only the last archive, add the other to the clean list.
@@ -244,7 +245,7 @@ function main() {
         # echo "We are going to need the name without date"
         pathName=$(basename "$cmdFrom")
         # List all files by name
-        fileList=($(\ls $cmdTo/$pathName*))
+        fileList=($(\find $cmdTo/ -maxdepth 1 -type f -name "$pathName*" ))
         declare -a aTest
         for (( i=0; i<${#fileList[@]}; i++ ))
         do
@@ -255,11 +256,12 @@ function main() {
                 aTest+=(${fileList[$i]})
             fi
         done
-        log "File list done"
+        log "Clean list done: ${#aTest[@]} item(s)"
+        # Cleaning loop
         for (( i=0; i<${#aTest[@]}; i++ ))
         do
-            # Cleaning loop
-            echo "rm ${aTest[$i]}"
+            log "rm ${aTest[$i]}"
+            rm ${aTest[$i]}
         done
     else
         log "MODE SYNC"
