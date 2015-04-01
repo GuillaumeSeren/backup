@@ -245,7 +245,7 @@ function main() {
         # echo "We are going to need the name without date"
         pathName=$(basename "$cmdFrom")
         # List all files by name
-        fileList=($(\find $cmdTo/ -maxdepth 1 -type f -name "$pathName*" ))
+        fileList=($(\find $cmdTo/ -maxdepth 1 -type f -name "$pathName*.tar.gz" ))
         declare -a aTest
         for (( i=0; i<${#fileList[@]}; i++ ))
         do
