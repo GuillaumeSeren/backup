@@ -3,13 +3,14 @@ backup
 Simple backup script for everyday use, focus on efficiency and portability.
 
 ## Why ?
-*Backup important things is really important* !
+*Backup things is really important* !
 
 I wanted to share my backup script, and also complete it to fit most,
 of common need, like:
 
-- Sync 2 directory content.
-- Save a directory or file as an archive.
+- Sync 2 directory content (SYNC).
+- Save a directory or file as an archive (TARB).
+- Clean other archives than today (CLEAN).
 - Auto generate a unique name for the archive (based on the time).
 - Output a clean log to track events, time and duration.
 - Add a lock file to track already running task.
@@ -33,7 +34,7 @@ $ ~/backup/backup.sh -h
 ```
 
 ## Who ?
-*Everyone should take backup seriously*, at least for really important stuff,
+*Everyone should take backup seriously*,
 I suggest to have, at least 3 copy on different computer and places (if able to).
 
 A great read on this subject, by jwz: http://www.jwz.org/doc/backups.html
