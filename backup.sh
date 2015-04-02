@@ -301,10 +301,11 @@ function main() {
         log  "$(tar -zcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
     elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
         log "MODE CLEAN"
-        # echo "We are going to need the name without date"
         pathName="$(basename "$cmdFrom")"
         # List all files by name
-        fileList=("$(\find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*.tar.gz")")
+        IFS=$'\n'
+        fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*.tar.gz"))
+        unset IFS
         declare -a aTest
         for (( i=0; i<"${#fileList[@]}"; i++ ))
         do
