@@ -10,6 +10,7 @@
 
 # TaskList {{{1
 #@FIXME: Better clean of the cmdTo path, to avoid // .
+#@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
 #@TODO: Add the getFileNameNotOn period 2 timestamp
 #@TODO: Keep only the last archive, add the other to the clean list.
@@ -228,18 +229,6 @@ function getValidateTo() {
     echo "$toReturn"
 }
 
-# FUNCTION getCleanedTargetFrom {{{1
-function getCleanedTargetFrom() {
-    if [[ -n "$1" && "$1" != "" ]]; then
-        # Test if there is a ending /
-        if [[ "$1" =~ ^.*+/.*+/$ ]]; then
-            # There is a ending /
-            echo "$1"
-        fi
-        # Remove the last /
-    fi
-}
-
 # GETOPTS {{{1
 # Get the param of the script.
 while getopts "f:t:m:h" OPTION
@@ -304,10 +293,12 @@ function main() {
         log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
         log "MODE TARBALL"
-        #@FIXME: It would be better to expand path like ~
+        # Delete the last / if any
+        cmdFrom="${cmdFrom%/}"
         pathName="$(basename "$cmdFrom")"
-        tarName="$(getUniqueName "$pathName")"
-        log  "$(tar -zcf "${cmdTo}/${tarName}.tar.gz" -C "${cmdFrom%$pathName}" "$pathName"/)"
+        tarName="$(getUniqueName "$pathName").tar.gz"
+        log "Archive name: $tarName"
+        log  "$(tar -zcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
     elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
         log "MODE CLEAN"
         # echo "We are going to need the name without date"
