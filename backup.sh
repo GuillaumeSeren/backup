@@ -29,10 +29,8 @@
 # 2 - Error log file
 # 3 - The last call is still running
 # 4 - The getFileNameByDay is called with no filename (first parm).
-# 5 - The isTargetFromValid have been called without arg.
-# 6 - The isTargetToValid have been called without arg.
-# 7 - The getValidateFrom arg is not readable, check fs perm.
-# 8 - The getValidateTo arg is not readable/writeable, check fr perm.
+# 5 - The getValidateFrom arg is not readable, check fs perm.
+# 6 - The getValidateTo arg is not readable/writeable, check fr perm.
 
 # Default variables {{{1
 # Flags :
@@ -186,48 +184,7 @@ function cleanLockFile() {
     fi
 }
 
-# FUNCTION isTargetFromValid() {{{1
-function isTargetFromValid() {
-    if [[ -n $1 && $1 != "" ]]; then
-        # Test if the target is valid
-        local targetFlagReturn=""
-        # - existence
-        # - readability
-        if [[ -r $1 ]]; then
-            # The target is readable and exist
-            targetFlagReturn=0
-        else
-            targetFlagReturn=1
-        fi
-    else
-        # You must give an arg here
-        echo "isTargetFromValid can not be called without arg"
-        exit 5
-    fi
-    echo $targetFlagReturn
-}
-
-#FUNCTION isTargetToValid() {{{1
-function isTargetToValid() {
-    if [[ -n $1 && $1 != "" ]]; then
-        # Test if the target is valid
-        local targetFlagReturn=1
-        # - existence
-        # - readability
-        if [[ -r $1 && -w $1 ]]; then
-            # The target is readable and exist
-            targetFlagReturn=0
-        fi
-    else
-        # You must give an arg here
-        echo "isTargetToValid can not be called without arg"
-        exit 6
-    fi
-    echo $targetFlagReturn
-}
-
 # FUNCTION getValidateFrom {{{1
-# Handler to validate the target.
 function getValidateFrom() {
     local from=""
     local fromReturn=""
@@ -235,12 +192,12 @@ function getValidateFrom() {
     if [[ -n $1 && $1 != "" ]]; then
         from="$1"
     else
+        # Without arg we take the default if set
         from="$cmdFrom"
     fi
     # Now test if the target is available
-    if [ $(isTargetFromValid "$from") == "0" ]; then
+    if [[ -r $from ]]; then
         # target is valid
-        # echo "target valid $from"
         fromReturn="$from"
     else
         # target is not
@@ -257,12 +214,12 @@ function getValidateTo() {
     if [[ -n $1 && $1 != "" ]]; then
         to="$1"
     else
+        # Without arg we take the default if set
         to="$cmdTo"
     fi
     # Now test if the target is available
-    if [ $(isTargetToValid "$to") == "0" ]; then
+    if [[ -r $to && -w $to ]]; then
         # target is valid
-        # echo "target valid $from"
         toReturn="$to"
     else
         # target is not
@@ -282,10 +239,6 @@ function getCleanedTargetFrom() {
         # Remove the last /
     fi
 }
-# FUNCTION getValidateTo {{{1
-# function getValidateTo() {
-# 
-# }
 
 # GETOPTS {{{1
 # Get the param of the script.
@@ -302,7 +255,7 @@ do
         if [[ $cmdFrom == "" ]]; then
             echo "The from target is invalid: $OPTARG"
             echo "Please check reading permissions of you file system"
-            exit 7
+            exit 5
         fi
         ;;
     t)
@@ -310,7 +263,7 @@ do
         if [[ $cmdTo == "" ]]; then
             echo "The to target is invalid: $OPTARG"
             echo "Please check reading permissions of you file system"
-            exit 8
+            exit 6
         fi
         ;;
     m)
