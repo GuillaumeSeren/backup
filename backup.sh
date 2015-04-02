@@ -29,6 +29,10 @@
 # 2 - Error log file
 # 3 - The last call is still running
 # 4 - The getFileNameByDay is called with no filename (first parm).
+# 5 - The isTargetFromValid have been called without arg.
+# 6 - The isTargetToValid have been called without arg.
+# 7 - The getValidateFrom arg is not readable, check fs perm.
+# 8 - The getValidateTo arg is not readable/writeable, check fr perm.
 
 # Default variables {{{1
 # Flags :
@@ -111,39 +115,6 @@ function log() {
     fi
 }
 
-# GETOPTS {{{1
-# Get the param of the script.
-while getopts "f:t:m:h" OPTION
-do
-    flagGetOpts=1
-    case $OPTION in
-    h)
-        usage
-        exit 1
-        ;;
-    f)
-        cmdFrom=$OPTARG
-        ;;
-    t)
-        cmdTo=$OPTARG
-        ;;
-    m)
-        cmdMode=$OPTARG
-        ;;
-    ?)
-        echo "commande $1 inconnue"
-        usage
-        exit
-        ;;
-    esac
-done
-# We check if getopts did not find no any param
-if [ $flagGetOpts == 0 ]; then
-    echo 'This script cannot be launched without options.'
-    usage
-    exit 1
-fi
-
 # FUNCTION getUniqueName {{{1
 function getUniqueName() {
     dateNow=$(date +"%Y%m%d-%H:%M:%S")
@@ -214,6 +185,150 @@ function cleanLockFile() {
         rm $lockFile
     fi
 }
+
+# FUNCTION isTargetFromValid() {{{1
+function isTargetFromValid() {
+    if [[ -n $1 && $1 != "" ]]; then
+        # Test if the target is valid
+        local targetFlagReturn=""
+        # - existence
+        # - readability
+        if [[ -r $1 ]]; then
+            # The target is readable and exist
+            targetFlagReturn=0
+        else
+            targetFlagReturn=1
+        fi
+    else
+        # You must give an arg here
+        echo "isTargetFromValid can not be called without arg"
+        exit 5
+    fi
+    echo $targetFlagReturn
+}
+
+#FUNCTION isTargetToValid() {{{1
+function isTargetToValid() {
+    if [[ -n $1 && $1 != "" ]]; then
+        # Test if the target is valid
+        local targetFlagReturn=1
+        # - existence
+        # - readability
+        if [[ -r $1 && -w $1 ]]; then
+            # The target is readable and exist
+            targetFlagReturn=0
+        fi
+    else
+        # You must give an arg here
+        echo "isTargetToValid can not be called without arg"
+        exit 6
+    fi
+    echo $targetFlagReturn
+}
+
+# FUNCTION getValidateFrom {{{1
+# Handler to validate the target.
+function getValidateFrom() {
+    local from=""
+    local fromReturn=""
+    # validate the target
+    if [[ -n $1 && $1 != "" ]]; then
+        from="$1"
+    else
+        from="$cmdFrom"
+    fi
+    # Now test if the target is available
+    if [ $(isTargetFromValid "$from") == "0" ]; then
+        # target is valid
+        # echo "target valid $from"
+        fromReturn="$from"
+    else
+        # target is not
+        fromReturn=""
+    fi
+    echo $fromReturn
+}
+
+# FUNCTION getValidateTo {{{1
+function getValidateTo() {
+    local to=""
+    local toReturn=""
+    # validate the target
+    if [[ -n $1 && $1 != "" ]]; then
+        to="$1"
+    else
+        to="$cmdTo"
+    fi
+    # Now test if the target is available
+    if [ $(isTargetToValid "$to") == "0" ]; then
+        # target is valid
+        # echo "target valid $from"
+        toReturn="$to"
+    else
+        # target is not
+        toReturn=""
+    fi
+    echo $toReturn
+}
+
+# FUNCTION getCleanedTargetFrom {{{1
+function getCleanedTargetFrom() {
+    if [[ -n $1 && $1 != "" ]]; then
+        # Test if there is a ending /
+        if [[ "${1}" =~ ^.*+/.*+/$ ]]; then
+            # There is a ending /
+            echo $1
+        fi
+        # Remove the last /
+    fi
+}
+# FUNCTION getValidateTo {{{1
+# function getValidateTo() {
+# 
+# }
+
+# GETOPTS {{{1
+# Get the param of the script.
+while getopts "f:t:m:h" OPTION
+do
+    flagGetOpts=1
+    case $OPTION in
+    h)
+        usage
+        exit 1
+        ;;
+    f)
+        cmdFrom=$(getValidateFrom "$OPTARG")
+        if [[ $cmdFrom == "" ]]; then
+            echo "The from target is invalid: $OPTARG"
+            echo "Please check reading permissions of you file system"
+            exit 7
+        fi
+        ;;
+    t)
+        cmdTo=$(getValidateTo "$OPTARG")
+        if [[ $cmdTo == "" ]]; then
+            echo "The to target is invalid: $OPTARG"
+            echo "Please check reading permissions of you file system"
+            exit 8
+        fi
+        ;;
+    m)
+        cmdMode=$OPTARG
+        ;;
+    ?)
+        echo "commande $1 inconnue"
+        usage
+        exit
+        ;;
+    esac
+done
+# We check if getopts did not find no any param
+if [ $flagGetOpts == 0 ]; then
+    echo 'This script cannot be launched without options.'
+    usage
+    exit 1
+fi
 
 # FUNCTION main() {{{1
 function main() {
