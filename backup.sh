@@ -185,6 +185,45 @@ function cleanLockFile() {
     fi
 }
 
+# FUNCTION getUrlType {{{1
+function getUrlType
+{
+    # Return the type of the URL.
+    #----------------------------------------------
+    # SSH   - 192.168.0.1:~/mypath/
+    # SSH   - foo@192.168.0.1:~/mypath/
+    # SSH   - ssh_alias:~/mypath/
+    # LOCAL - ~/mypath/
+    #--------------------------------------------
+    # Regex :
+    local sRegPathLocal='^(/)?([a-zA-Z]+.(/)?)+$'
+    local sRegPathSshIp='^([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
+    local sRegPathSshIpUser='^([a-zA-Z0-9]+)@([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
+    local sRegPathSshAlias='^(.+):(~/.+)?(/.+)?$'
+    #--------------------------------------------
+    # Get param
+    if [[ -n "$1" && "$1" != "" ]]; then
+        local url=$1
+    fi
+    local urlType=""
+    if [[ $url =~ $sRegPathSshIp ||
+          $url =~ $sRegPathSshIpUser ||
+          $url =~ $sRegPathSshAlias
+    ]]; then
+        # It's SSH
+        urlType="ssh"
+    elif [[ $url =~ $sRegPathLocal ]]; then
+        # It's local
+        urlType="local"
+    else
+        # Sinon c'est une url inconnu.
+        urlType="unknown"
+        # echo "Error URL : $url"
+        # exit $flag
+    fi
+    echo $urlType
+}
+
 # FUNCTION getValidateFrom {{{1
 function getValidateFrom() {
     local from=""
@@ -196,13 +235,20 @@ function getValidateFrom() {
         # Without arg we take the default if set
         from="$cmdFrom"
     fi
-    # Now test if the target is available
-    if [[ -r "$from" ]]; then
-        # target is valid
-        fromReturn="$from"
+    # We need to detect the type of url:
+    local urlType="$(getUrlType "$from")"
+    if [[ "$urlType" == "local" ]]; then
+        # Now test if the target is available
+        if [[ -r "$from" ]]; then
+            # target is valid
+            fromReturn="$from"
+        else
+            # target is not
+            fromReturn=""
+        fi
     else
-        # target is not
-        fromReturn=""
+        # The URL is not local so we don't test it
+        fromReturn="$from"
     fi
     echo "$fromReturn"
 }
@@ -218,13 +264,20 @@ function getValidateTo() {
         # Without arg we take the default if set
         to="$cmdTo"
     fi
-    # Now test if the target is available
-    if [[ -r "$to" && -w "$to" ]]; then
-        # target is valid
-        toReturn="$to"
+    # We need to detect the type of url:
+    local urlType="$(getUrlType "$to")"
+    if [[ "$urlType" == "local" ]]; then
+        # Now test if the target is available
+        if [[ -r "$to" && -w "$to" ]]; then
+            # target is valid
+            toReturn="$to"
+        else
+            # target is not
+            toReturn=""
+        fi
     else
-        # target is not
-        toReturn=""
+        # The URL is not local so we don't test it
+        toReturn="$toReturn"
     fi
     echo "$toReturn"
 }
@@ -243,7 +296,7 @@ do
         cmdFrom="$(getValidateFrom "$OPTARG")"
         if [[ "$cmdFrom" == "" ]]; then
             echo "The from target is invalid: $OPTARG"
-            echo "Please check reading permissions of you file system"
+            echo "Please check reading permissions of your file system"
             exit 5
         fi
         ;;
@@ -251,7 +304,7 @@ do
         cmdTo="$(getValidateTo "$OPTARG")"
         if [[ "$cmdTo" == "" ]]; then
             echo "The to target is invalid: $OPTARG"
-            echo "Please check reading permissions of you file system"
+            echo "Please check reading permissions of your file system"
             exit 6
         fi
         ;;
