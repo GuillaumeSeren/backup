@@ -9,7 +9,9 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@FIXME: Better clean of the cmdTo path, to avoid // .
+#@TODO: Add SYNCRM, to sync and also delete.
+#@TODO: Add list of SYNCRM in the log.
+#@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
 #@TODO: Add the getFileNameNotOn period 2 timestamp
@@ -18,9 +20,7 @@
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add time and size to the log.
-#@TODO: Add SYNCRM, to sync and also delete.
 #@TODO: Add 2 way SYNC2W to provide 2 way sync, the newer is taken.
-#@TODO: Add better log, calculate size moved / read.
 #@TODO: Move log to /var/log.
 #@TODO: Add speed stat mo/s ko/s go/s.
 
@@ -79,7 +79,7 @@ Sample:
 DOC
 }
 
-# FUNCION createlogFile() {{{1
+# FUNCTION createlogFile() {{{1
 function createLogFile() {
     # Touch the file
     if [ ! -f "$logFile" ]; then
@@ -94,7 +94,7 @@ function createLogFile() {
     echo "$earlyLog"
 }
 
-# FUNCTION log {{{1
+# FUNCTION log() {{{1
 function log() {
     dateNow="$(date +"%Y%m%d-%H:%M:%S")"
     # We need to check if the file is available
@@ -114,7 +114,7 @@ function log() {
     fi
 }
 
-# FUNCTION getUniqueName {{{1
+# FUNCTION getUniqueName() {{{1
 function getUniqueName() {
     dateNow="$(date +"%Y%m%d-%H:%M:%S")"
     if [[ -n "$1" && "$1" != "" ]]; then
@@ -127,7 +127,7 @@ function getUniqueName() {
     echo "${uniqueName}_${dateNow}"
 }
 
-# Function getFileNameOnDay() {{{1
+# FUNCTION getFileNameOnDay() {{{1
 # Return the filename if the date pattern is on a given day (default today).
 function getFileNameOnDay() {
     # Check the filename
@@ -151,7 +151,7 @@ function getFileNameOnDay() {
     fi
 }
 
-# Function getFileNotOnDay() {{{1
+# FUNCTION getFileNotOnDay() {{{1
 # Return the filename if the date pattern is not on a given day (default today).
 function getFileNameNotOnDay() {
     # Check the filename
@@ -175,7 +175,7 @@ function getFileNameNotOnDay() {
     fi
 }
 
-# fuction cleanLockFile() {{{1
+# FUNCTION cleanLockFile() {{{1
 # clean lock file.
 function cleanLockFile() {
     # test if lock file has well been made
@@ -185,7 +185,7 @@ function cleanLockFile() {
     fi
 }
 
-# FUNCTION getUrlType {{{1
+# FUNCTION getUrlType() {{{1
 function getUrlType
 {
     # Return the type of the URL.
@@ -224,7 +224,7 @@ function getUrlType
     echo $urlType
 }
 
-# FUNCTION getValidateFrom {{{1
+# FUNCTION getValidateFrom() {{{1
 function getValidateFrom() {
     local from=""
     local fromReturn=""
@@ -253,7 +253,7 @@ function getValidateFrom() {
     echo "$fromReturn"
 }
 
-# FUNCTION getValidateTo {{{1
+# FUNCTION getValidateTo() {{{1
 function getValidateTo() {
     local to=""
     local toReturn=""
