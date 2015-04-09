@@ -9,6 +9,9 @@ I wanted to share my backup script, and also complete it to fit most,
 of common need, like:
 
 ## Modes
+The idea behind the modes, is to setup needed feature smallest possible,
+like that we can combine several call with different mode.
+
 This are the modes (-m) you can use with the script.
 
 MODE     | DESCRIPTION
@@ -25,7 +28,7 @@ MODE     | DESCRIPTION
 
 ## Philosophy
 Try to keep things simple as in `KISS` mantra (*Keep It Simple, Stupid*),
-and I try to get this cross-platform, at least Gnu Linux & Mac Os.
+and I try to get this **cross-platform**, everywhere bash can run.
 
 ## Usage & Installation
 You can clone this repos in your home directory, like:
@@ -37,6 +40,8 @@ $ crontab -e
 $ ~/backup/backup.sh -f ~/important -t /mnt/usb -m SYNC
 # You can also make a tarball, with the time in the name to be unique:
 $ ~/backup/backup.sh -f ~/important -t /mnt/usb -m TARB
+# Clean old tarball
+$ ~/backup/backup.sh -f ~/important -t /mnt/usb -m CLEAN
 # Delete cleaned files
 $ ~/backup/backup.sh -f ~/important -t /mnt/usb -m SYNCRM
 # Bring some help with the -h option:

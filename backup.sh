@@ -69,6 +69,7 @@ OPTIONS:
         "TARB":   Create a tarball. (LOCAL ONLY)
         "SYNC":   Sync 2 directory (default).
                   Note that the sync is 1 way (from -> to).
+        "CLEAN":  Clean old tarball, (keep only today).
         "SYNCRM": Delete the missing (cleaned) files on the reference.
 
 Sample:
@@ -76,6 +77,8 @@ Sample:
     "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNC
     Make a tarball of a path, save it in the location.
     "$0" -f server:/var/www/foo -t /var/save/dump/ -m TARB
+    Delete old tarball:
+    "$0" -f server:/var/www/foo -t /var/save/bar/ -m CLEAN
     SYNCRM 2 directory
     "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNCRM
 
