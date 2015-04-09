@@ -344,6 +344,27 @@ function main() {
     if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
         log "MODE SYNC"
         log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+    elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
+        log "MODE SYNCRM"
+        # Calculate files that are in the cmdTo but deleted on from.
+        IFS=$'\n'
+        fileList=($(rsync -avz --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
+        unset IFS
+        log "SYNCRM Nb fichier détectés: ${#fileList[@]}"
+        declare -a aSyncRm
+        for (( i=0; i<"${#fileList[@]}"; i++ ))
+        do
+            # Remove the last / if any in the cmdTo name
+            targetRm="${cmdTo%/}/${fileList[$i]}"
+            log "Delete: ${targetRm}"
+            if [[ -d "${targetRm}" ]]; then
+                rm -r "${targetRm}"
+            else
+                rm "${targetRm}"
+            fi
+            aSyncRm+=("${fileList[$i]}")
+        done
+        log "SYNCRM list done: "${#aSyncRm[@]}" deleted item(s)"
     elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
         log "MODE TARBALL"
         # Delete the last / if any
