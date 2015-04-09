@@ -9,6 +9,8 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+#@FIXME: We need better test over ssh before rm/add.
+#@TODO: Add a way to get the rsync/tar status.
 #@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
@@ -283,49 +285,6 @@ function getValidateTo() {
     echo "$toReturn"
 }
 
-# GETOPTS {{{1
-# Get the param of the script.
-while getopts "f:t:m:h" OPTION
-do
-    flagGetOpts=1
-    case $OPTION in
-    h)
-        usage
-        exit 1
-        ;;
-    f)
-        cmdFrom="$(getValidateFrom "$OPTARG")"
-        if [[ "$cmdFrom" == "" ]]; then
-            echo "The from target is invalid: $OPTARG"
-            echo "Please check reading permissions of your file system"
-            exit 5
-        fi
-        ;;
-    t)
-        cmdTo="$(getValidateTo "$OPTARG")"
-        if [[ "$cmdTo" == "" ]]; then
-            echo "The to target is invalid: $OPTARG"
-            echo "Please check reading permissions of your file system"
-            exit 6
-        fi
-        ;;
-    m)
-        cmdMode="$OPTARG"
-        ;;
-    ?)
-        echo "commande $1 inconnue"
-        usage
-        exit
-        ;;
-    esac
-done
-# We check if getopts did not find no any param
-if [ "$flagGetOpts" == 0 ]; then
-    echo 'This script cannot be launched without options.'
-    usage
-    exit 1
-fi
-
 # FUNCTION getFileSize {{{1
 function getFileSize() {
     # Default size
@@ -375,6 +334,49 @@ function rmDir() {
     fi
 }
 
+# GETOPTS {{{1
+# Get the param of the script.
+while getopts "f:t:m:h" OPTION
+do
+    flagGetOpts=1
+    case $OPTION in
+    h)
+        usage
+        exit 1
+        ;;
+    f)
+        cmdFrom="$(getValidateFrom "$OPTARG")"
+        if [[ "$cmdFrom" == "" ]]; then
+            echo "The from target is invalid: $OPTARG"
+            echo "Please check reading permissions of your file system"
+            exit 5
+        fi
+        ;;
+    t)
+        cmdTo="$(getValidateTo "$OPTARG")"
+        if [[ "$cmdTo" == "" ]]; then
+            echo "The to target is invalid: $OPTARG"
+            echo "Please check reading permissions of your file system"
+            exit 6
+        fi
+        ;;
+    m)
+        cmdMode="$OPTARG"
+        ;;
+    ?)
+        echo "commande $1 inconnue"
+        usage
+        exit
+        ;;
+    esac
+done
+# We check if getopts did not find no any param
+if [ "$flagGetOpts" == 0 ]; then
+    echo 'This script cannot be launched without options.'
+    usage
+    exit 1
+fi
+
 # FUNCTION main() {{{1
 function main() {
     # Encode the timestamp of the start in hex to make a id.
@@ -414,13 +416,13 @@ function main() {
                 if [[ -d "${targetRm}" ]]; then
                     rmDir "${targetRm}"
                 else
-                    sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${targetRm}") ))
+                    sizeFileDeleted=$(( "$sizeFileDeleted" + "$(getFileSize "${targetRm}")" ))
                     rmFile "${targetRm}"
                 fi
                 aSyncRm+=("${fileList[$i]}")
             fi
         done
-        log "SYNCRM list done: "${#aSyncRm[@]}" deleted item(s)"
+        log "SYNCRM list done: ${#aSyncRm[@]} deleted item(s)"
         log "SYNCRM size freed: ${sizeFileDeleted}"
     elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
         log "MODE TARBALL"
@@ -455,7 +457,7 @@ function main() {
         for (( i=0; i<"${#aFileToClean[@]}"; i++ ))
         do
             log "rm ${aFileToClean[$i]}"
-            sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
+            sizeFileDeleted=$(( "$sizeFileDeleted" + "$(getFileSize "${aFileToClean[$i]}")" ))
             rmFile "${aFileToClean[$i]}"
         done
         log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
