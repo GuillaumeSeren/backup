@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+#@TODO: Add check before trying to rm.
 #@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
@@ -182,7 +183,7 @@ function cleanLockFile() {
     # test if lock file has well been made
     if [[ -n "$lockFile" && "$lockFile" != "" ]]; then
         log "cleaning the lock file: $lockFile"
-        rm "$lockFile"
+        rmFile "$lockFile"
     fi
 }
 
@@ -337,6 +338,44 @@ function getFileSize() {
     echo "${returnSize}"
 }
 
+# FUNCTION rmFile() {{{1
+function rmFile() {
+    # Before deleting the file we check that exist and type and perm
+    if [[ -n "${1}" && "${1}" != "" ]]; then
+        if [[ ! -e "${1}" ]]; then
+            # if file not exist
+            log "File ${1} not exist"
+        elif [[ ! -f "${1}" ]]; then
+            # file is not a regular file
+            log "File ${1} is not a regular file"
+        elif [[ ! -r "${1}" && ! -w "${1}" ]]; then
+            log "File ${1} permissions problem (r/w)"
+        else
+            # I hope we can delete it now
+            rm "${1}"
+        fi
+    fi
+}
+
+# FUNCTION rmDir() {{{1
+function rmDir() {
+    # Before deleting the directory we check that exist and type and perm
+    if [[ -n "${1}" && "${1}" != "" ]]; then
+        if [[ ! -e "${1}" ]]; then
+            # if file not exist
+            log "Directory ${1} not exist"
+        elif [[ ! -d "${1}" ]]; then
+            # file is not a regular file
+            log "Directory ${1} is not a directory"
+        elif [[ ! -r "${1}" && ! -w "${1}" ]]; then
+            log "Directory ${1} permissions problem (r/w)"
+        else
+            # I hope we can delete it now
+            rm -r "${1}"
+        fi
+    fi
+}
+
 # FUNCTION main() {{{1
 function main() {
     # Encode the timestamp of the start in hex to make a id.
@@ -371,10 +410,10 @@ function main() {
             targetRm="${cmdTo%/}/${fileList[$i]}"
             log "Delete: ${targetRm}"
             if [[ -d "${targetRm}" ]]; then
-                rm -r "${targetRm}"
+                rmDir "${targetRm}"
             else
                 sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${targetRm}") ))
-                rm "${targetRm}"
+                rmFile "${targetRm}"
             fi
             aSyncRm+=("${fileList[$i]}")
         done
@@ -414,7 +453,7 @@ function main() {
         do
             log "rm ${aFileToClean[$i]}"
             sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
-            rm "${aFileToClean[$i]}"
+            rmFile "${aFileToClean[$i]}"
         done
         log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
         log "CLEAN size freed: ${sizeFileDeleted}"
