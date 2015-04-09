@@ -395,7 +395,7 @@ function main() {
     echo "$timeStart" > "$lockFile"
     if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
         log "MODE SYNC"
-        log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+        log "$(rsync -az "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
         log "MODE SYNCRM"
         # Calculate files that are in the cmdTo but deleted on from.
@@ -466,7 +466,7 @@ function main() {
         #@FIXME: We should better set cmdMode a default value and use this case for error.
         log "MODE SYNC"
         log "Default mode"
-        log "$(rsync -avz --rsync-path="sudo rsync" "$cmdfrom" "$cmdTo")"
+        log "$(rsync -avz "$cmdfrom" "$cmdTo")"
     fi
     timeEnd="$(date +"%s")"
     cleanLockFile
