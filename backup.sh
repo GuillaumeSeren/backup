@@ -66,15 +66,18 @@ OPTIONS:
             - ssh_alias:~/foo
             - user@127.0.0.1:~/foo
     -m  Define mode, can be:
-        "TARB": Create a tarball. (LOCAL ONLY)
-        "SYNC": Sync 2 directory (default).
-                Note that the sync is 1 way (from -> to).
+        "TARB":   Create a tarball. (LOCAL ONLY)
+        "SYNC":   Sync 2 directory (default).
+                  Note that the sync is 1 way (from -> to).
+        "SYNCRM": Delete the missing (cleaned) files on the reference.
 
 Sample:
     Sync 2 directory
     "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNC
     Make a tarball of a path, save it in the location.
     "$0" -f server:/var/www/foo -t /var/save/dump/ -m TARB
+    SYNCRM 2 directory
+    "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNCRM
 
 DOC
 }
