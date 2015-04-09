@@ -9,12 +9,14 @@ I wanted to share my backup script, and also complete it to fit most,
 of common need, like:
 
 ## Modes
-MODE   | DESCRIPTION
---------------------
-SYNC   | Sync 2 directory content.
-TARB   | Save a directory or file as an archive.
-CLEAN  | Clean other archives than today.
-SYNCRM | Delete the missing (cleaned) files in the reference.
+This are the modes (-m) you can use with the script.
+
+MODE     | DESCRIPTION
+---------|------------
+`SYNC`   | **Sync** 2 directory content.
+`TARB`   | **Tarball** a directory or file.
+`CLEAN`  | **Clean** other archives than today.
+`SYNCRM` | **Delete** the missing (cleaned) files in the reference.
 
 ## Features
 - Auto generate a unique name for the archive (based on the time).
