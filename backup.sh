@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@TODO: Add check before trying to rm.
 #@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
@@ -406,16 +405,20 @@ function main() {
         declare -a aSyncRm
         for (( i=0; i<"${#fileList[@]}"; i++ ))
         do
-            # Remove the last / if any in the cmdTo name
-            targetRm="${cmdTo%/}/${fileList[$i]}"
-            log "Delete: ${targetRm}"
-            if [[ -d "${targetRm}" ]]; then
-                rmDir "${targetRm}"
+            if [[ "${fileList[$i]}" == "" || "${fileList[$i]}" =~ ^[[:space:]]++$ ]]; then
+                log "SYNCRM error on the file: ${fileList[$i]}"
             else
-                sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${targetRm}") ))
-                rmFile "${targetRm}"
+                # Remove the last / if any in the cmdTo name
+                targetRm="${cmdTo%/}/${fileList[$i]}"
+                log "Delete: ${targetRm}"
+                if [[ -d "${targetRm}" ]]; then
+                    rmDir "${targetRm}"
+                else
+                    sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${targetRm}") ))
+                    rmFile "${targetRm}"
+                fi
+                aSyncRm+=("${fileList[$i]}")
             fi
-            aSyncRm+=("${fileList[$i]}")
         done
         log "SYNCRM list done: "${#aSyncRm[@]}" deleted item(s)"
         log "SYNCRM size freed: ${sizeFileDeleted}"
