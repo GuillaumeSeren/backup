@@ -8,18 +8,29 @@ Simple backup script for everyday use, focus on efficiency and portability.
 I wanted to share my backup script, and also complete it to fit most,
 of common need, like:
 
-- Sync 2 directory content (SYNC).
-- Save a directory or file as an archive (TARB).
-- Clean other archives than today (CLEAN).
+## Modes
+The idea behind the modes, is to setup needed feature smallest possible,
+like that we can combine several call with different mode.
+
+This are the modes (-m) you can use with the script.
+
+MODE     | DESCRIPTION
+---------|------------
+`SYNC`   | **Sync** 2 directory content.
+`TARB`   | **Tarball** a directory or file.
+`CLEAN`  | **Clean** other archives than today.
+`SYNCRM` | **Delete** the missing (cleaned) files in the reference.
+
+## Features
 - Auto generate a unique name for the archive (based on the time).
 - Output a clean log to track events, time and duration.
 - Add a lock file to track already running task.
 
-## Philosophy :
+## Philosophy
 Try to keep things simple as in `KISS` mantra (*Keep It Simple, Stupid*),
-and I try to get this cross-platform, at least Gnu Linux & Mac Os.
+and I try to get this **cross-platform**, everywhere bash can run.
 
-## Usage & Installation :
+## Usage & Installation
 You can clone this repos in your home directory, like:
 ```
 $ git clone https://github.com/GuillaumeSeren/backup.git ~/backup
@@ -29,7 +40,11 @@ $ crontab -e
 $ ~/backup/backup.sh -f ~/important -t /mnt/usb -m SYNC
 # You can also make a tarball, with the time in the name to be unique:
 $ ~/backup/backup.sh -f ~/important -t /mnt/usb -m TARB
-# You can bring some help with the -h option:
+# Clean old tarball
+$ ~/backup/backup.sh -f ~/important -t /mnt/usb -m CLEAN
+# Delete cleaned files
+$ ~/backup/backup.sh -f ~/important -t /mnt/usb -m SYNCRM
+# Bring some help with the -h option:
 $ ~/backup/backup.sh -h
 ```
 

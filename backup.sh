@@ -9,18 +9,13 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@FIXME: Better clean of the cmdTo path, to avoid // .
+#@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
 #@TODO: Add the getFileNameNotOn period 2 timestamp
-#@TODO: Keep only the last archive, add the other to the clean list.
-#@TODO: Count the number and size freed by the cleaning, log it.
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
-#@TODO: Add time and size to the log.
-#@TODO: Add SYNCRM, to sync and also delete.
 #@TODO: Add 2 way SYNC2W to provide 2 way sync, the newer is taken.
-#@TODO: Add better log, calculate size moved / read.
 #@TODO: Move log to /var/log.
 #@TODO: Add speed stat mo/s ko/s go/s.
 
@@ -66,20 +61,26 @@ OPTIONS:
             - ssh_alias:~/foo
             - user@127.0.0.1:~/foo
     -m  Define mode, can be:
-        "TARB": Create a tarball. (LOCAL ONLY)
-        "SYNC": Sync 2 directory (default).
-                Note that the sync is 1 way (from -> to).
+        "TARB":   Create a tarball. (LOCAL ONLY)
+        "SYNC":   Sync 2 directory (default).
+                  Note that the sync is 1 way (from -> to).
+        "CLEAN":  Clean old tarball, (keep only today).
+        "SYNCRM": Delete the missing (cleaned) files on the reference.
 
 Sample:
     Sync 2 directory
     "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNC
     Make a tarball of a path, save it in the location.
     "$0" -f server:/var/www/foo -t /var/save/dump/ -m TARB
+    Delete old tarball:
+    "$0" -f server:/var/www/foo -t /var/save/bar/ -m CLEAN
+    SYNCRM 2 directory
+    "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNCRM
 
 DOC
 }
 
-# FUNCION createlogFile() {{{1
+# FUNCTION createlogFile() {{{1
 function createLogFile() {
     # Touch the file
     if [ ! -f "$logFile" ]; then
@@ -94,7 +95,7 @@ function createLogFile() {
     echo "$earlyLog"
 }
 
-# FUNCTION log {{{1
+# FUNCTION log() {{{1
 function log() {
     dateNow="$(date +"%Y%m%d-%H:%M:%S")"
     # We need to check if the file is available
@@ -114,7 +115,7 @@ function log() {
     fi
 }
 
-# FUNCTION getUniqueName {{{1
+# FUNCTION getUniqueName() {{{1
 function getUniqueName() {
     dateNow="$(date +"%Y%m%d-%H:%M:%S")"
     if [[ -n "$1" && "$1" != "" ]]; then
@@ -127,7 +128,7 @@ function getUniqueName() {
     echo "${uniqueName}_${dateNow}"
 }
 
-# Function getFileNameOnDay() {{{1
+# FUNCTION getFileNameOnDay() {{{1
 # Return the filename if the date pattern is on a given day (default today).
 function getFileNameOnDay() {
     # Check the filename
@@ -151,7 +152,7 @@ function getFileNameOnDay() {
     fi
 }
 
-# Function getFileNotOnDay() {{{1
+# FUNCTION getFileNotOnDay() {{{1
 # Return the filename if the date pattern is not on a given day (default today).
 function getFileNameNotOnDay() {
     # Check the filename
@@ -175,7 +176,7 @@ function getFileNameNotOnDay() {
     fi
 }
 
-# fuction cleanLockFile() {{{1
+# FUNCTION cleanLockFile() {{{1
 # clean lock file.
 function cleanLockFile() {
     # test if lock file has well been made
@@ -185,7 +186,7 @@ function cleanLockFile() {
     fi
 }
 
-# FUNCTION getUrlType {{{1
+# FUNCTION getUrlType() {{{1
 function getUrlType
 {
     # Return the type of the URL.
@@ -224,7 +225,7 @@ function getUrlType
     echo $urlType
 }
 
-# FUNCTION getValidateFrom {{{1
+# FUNCTION getValidateFrom() {{{1
 function getValidateFrom() {
     local from=""
     local fromReturn=""
@@ -253,7 +254,7 @@ function getValidateFrom() {
     echo "$fromReturn"
 }
 
-# FUNCTION getValidateTo {{{1
+# FUNCTION getValidateTo() {{{1
 function getValidateTo() {
     local to=""
     local toReturn=""
@@ -325,6 +326,17 @@ if [ "$flagGetOpts" == 0 ]; then
     exit 1
 fi
 
+# FUNCTION getFileSize {{{1
+function getFileSize() {
+    # Default size
+    local returnSize="0"
+    # get the file size
+    if [[ -n "${1}" && "${1}" != "" ]]; then
+        returnSize=$(du -b "${1}" | cut -f1)
+    fi
+    echo "${returnSize}"
+}
+
 # FUNCTION main() {{{1
 function main() {
     # Encode the timestamp of the start in hex to make a id.
@@ -344,39 +356,70 @@ function main() {
     if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
         log "MODE SYNC"
         log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+    elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
+        log "MODE SYNCRM"
+        # Calculate files that are in the cmdTo but deleted on from.
+        IFS=$'\n'
+        fileList=($(rsync -avz --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
+        unset IFS
+        log "SYNCRM Nb fichier détectés: ${#fileList[@]}"
+        sizeFileDeleted=0
+        declare -a aSyncRm
+        for (( i=0; i<"${#fileList[@]}"; i++ ))
+        do
+            # Remove the last / if any in the cmdTo name
+            targetRm="${cmdTo%/}/${fileList[$i]}"
+            log "Delete: ${targetRm}"
+            if [[ -d "${targetRm}" ]]; then
+                rm -r "${targetRm}"
+            else
+                sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${targetRm}") ))
+                rm "${targetRm}"
+            fi
+            aSyncRm+=("${fileList[$i]}")
+        done
+        log "SYNCRM list done: "${#aSyncRm[@]}" deleted item(s)"
+        log "SYNCRM size freed: ${sizeFileDeleted}"
     elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
         log "MODE TARBALL"
         # Delete the last / if any
         cmdFrom="${cmdFrom%/}"
         pathName="$(basename "$cmdFrom")"
         tarName="$(getUniqueName "$pathName").tar.gz"
+        sizeFileDeleted=0
         log "Archive name: $tarName"
-        log  "$(tar -zcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
+        log "$(tar -zcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
+        sizeFileDeleted="$(getFileSize "${cmdTo}/${tarName}")"
+        log "TARB file size: ${sizeFileDeleted}"
     elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
         log "MODE CLEAN"
         pathName="$(basename "$cmdFrom")"
+        sizeFileDeleted=0
         # List all files by name
         IFS=$'\n'
         fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*.tar.gz"))
         unset IFS
-        declare -a aTest
+        declare -a aFileToClean
         for (( i=0; i<"${#fileList[@]}"; i++ ))
         do
             # Check file not today for the clean
             fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")"
             if [[ -n "$fileMatch" && "$fileMatch" != "" ]]; then
                 # There was a match
-                aTest+=("${fileList[$i]}")
+                aFileToClean+=("${fileList[$i]}")
             fi
         done
-        log "Clean list done: ${#aTest[@]} item(s)"
         # Cleaning loop
-        for (( i=0; i<"${#aTest[@]}"; i++ ))
+        for (( i=0; i<"${#aFileToClean[@]}"; i++ ))
         do
-            log "rm ${aTest[$i]}"
-            rm "${aTest[$i]}"
+            log "rm ${aFileToClean[$i]}"
+            sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
+            rm "${aFileToClean[$i]}"
         done
+        log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
+        log "CLEAN size freed: ${sizeFileDeleted}"
     else
+        #@FIXME: We should better set cmdMode a default value and use this case for error.
         log "MODE SYNC"
         log "Default mode"
         log "$(rsync -avz --rsync-path="sudo rsync" "$cmdfrom" "$cmdTo")"
