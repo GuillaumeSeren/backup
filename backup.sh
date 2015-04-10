@@ -9,6 +9,8 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+#@FIXME: We need better test over ssh before rm/add.
+#@TODO: Add a way to get the rsync/tar status.
 #@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
@@ -182,7 +184,7 @@ function cleanLockFile() {
     # test if lock file has well been made
     if [[ -n "$lockFile" && "$lockFile" != "" ]]; then
         log "cleaning the lock file: $lockFile"
-        rm "$lockFile"
+        rmFile "$lockFile"
     fi
 }
 
@@ -283,6 +285,55 @@ function getValidateTo() {
     echo "$toReturn"
 }
 
+# FUNCTION getFileSize {{{1
+function getFileSize() {
+    # Default size
+    local returnSize="0"
+    # get the file size
+    if [[ -n "${1}" && "${1}" != "" ]]; then
+        returnSize=$(du -b "${1}" | cut -f1)
+    fi
+    echo "${returnSize}"
+}
+
+# FUNCTION rmFile() {{{1
+function rmFile() {
+    # Before deleting the file we check that exist and type and perm
+    if [[ -n "${1}" && "${1}" != "" ]]; then
+        if [[ ! -e "${1}" ]]; then
+            # if file not exist
+            log "File ${1} not exist"
+        elif [[ ! -f "${1}" ]]; then
+            # file is not a regular file
+            log "File ${1} is not a regular file"
+        elif [[ ! -r "${1}" && ! -w "${1}" ]]; then
+            log "File ${1} permissions problem (r/w)"
+        else
+            # I hope we can delete it now
+            rm "${1}"
+        fi
+    fi
+}
+
+# FUNCTION rmDir() {{{1
+function rmDir() {
+    # Before deleting the directory we check that exist and type and perm
+    if [[ -n "${1}" && "${1}" != "" ]]; then
+        if [[ ! -e "${1}" ]]; then
+            # if file not exist
+            log "Directory ${1} not exist"
+        elif [[ ! -d "${1}" ]]; then
+            # file is not a regular file
+            log "Directory ${1} is not a directory"
+        elif [[ ! -r "${1}" && ! -w "${1}" ]]; then
+            log "Directory ${1} permissions problem (r/w)"
+        else
+            # I hope we can delete it now
+            rm -r "${1}"
+        fi
+    fi
+}
+
 # GETOPTS {{{1
 # Get the param of the script.
 while getopts "f:t:m:h" OPTION
@@ -326,17 +377,6 @@ if [ "$flagGetOpts" == 0 ]; then
     exit 1
 fi
 
-# FUNCTION getFileSize {{{1
-function getFileSize() {
-    # Default size
-    local returnSize="0"
-    # get the file size
-    if [[ -n "${1}" && "${1}" != "" ]]; then
-        returnSize=$(du -b "${1}" | cut -f1)
-    fi
-    echo "${returnSize}"
-}
-
 # FUNCTION main() {{{1
 function main() {
     # Encode the timestamp of the start in hex to make a id.
@@ -355,7 +395,7 @@ function main() {
     echo "$timeStart" > "$lockFile"
     if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
         log "MODE SYNC"
-        log "$(rsync -az --rsync-path="sudo rsync" "$cmdFrom" "$cmdTo")"
+        log "$(rsync -az "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
         log "MODE SYNCRM"
         # Calculate files that are in the cmdTo but deleted on from.
@@ -367,18 +407,22 @@ function main() {
         declare -a aSyncRm
         for (( i=0; i<"${#fileList[@]}"; i++ ))
         do
-            # Remove the last / if any in the cmdTo name
-            targetRm="${cmdTo%/}/${fileList[$i]}"
-            log "Delete: ${targetRm}"
-            if [[ -d "${targetRm}" ]]; then
-                rm -r "${targetRm}"
+            if [[ "${fileList[$i]}" == "" || "${fileList[$i]}" =~ ^[[:space:]]++$ ]]; then
+                log "SYNCRM error on the file: ${fileList[$i]}"
             else
-                sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${targetRm}") ))
-                rm "${targetRm}"
+                # Remove the last / if any in the cmdTo name
+                targetRm="${cmdTo%/}/${fileList[$i]}"
+                log "Delete: ${targetRm}"
+                if [[ -d "${targetRm}" ]]; then
+                    rmDir "${targetRm}"
+                else
+                    sizeFileDeleted=$(( "$sizeFileDeleted" + "$(getFileSize "${targetRm}")" ))
+                    rmFile "${targetRm}"
+                fi
+                aSyncRm+=("${fileList[$i]}")
             fi
-            aSyncRm+=("${fileList[$i]}")
         done
-        log "SYNCRM list done: "${#aSyncRm[@]}" deleted item(s)"
+        log "SYNCRM list done: ${#aSyncRm[@]} deleted item(s)"
         log "SYNCRM size freed: ${sizeFileDeleted}"
     elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
         log "MODE TARBALL"
@@ -413,8 +457,8 @@ function main() {
         for (( i=0; i<"${#aFileToClean[@]}"; i++ ))
         do
             log "rm ${aFileToClean[$i]}"
-            sizeFileDeleted=$(( $sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
-            rm "${aFileToClean[$i]}"
+            sizeFileDeleted=$(( "$sizeFileDeleted" + "$(getFileSize "${aFileToClean[$i]}")" ))
+            rmFile "${aFileToClean[$i]}"
         done
         log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
         log "CLEAN size freed: ${sizeFileDeleted}"
@@ -422,7 +466,7 @@ function main() {
         #@FIXME: We should better set cmdMode a default value and use this case for error.
         log "MODE SYNC"
         log "Default mode"
-        log "$(rsync -avz --rsync-path="sudo rsync" "$cmdfrom" "$cmdTo")"
+        log "$(rsync -avz "$cmdfrom" "$cmdTo")"
     fi
     timeEnd="$(date +"%s")"
     cleanLockFile
