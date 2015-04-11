@@ -416,7 +416,7 @@ function main() {
                 if [[ -d "${targetRm}" ]]; then
                     rmDir "${targetRm}"
                 else
-                    sizeFileDeleted=$(( "$sizeFileDeleted" + "$(getFileSize "${targetRm}")" ))
+                    sizeFileDeleted=$(( sizeFileDeleted + $(getFileSize "${targetRm}") ))
                     rmFile "${targetRm}"
                 fi
                 aSyncRm+=("${fileList[$i]}")
@@ -457,7 +457,7 @@ function main() {
         for (( i=0; i<"${#aFileToClean[@]}"; i++ ))
         do
             log "rm ${aFileToClean[$i]}"
-            sizeFileDeleted=$(( "$sizeFileDeleted" + "$(getFileSize "${aFileToClean[$i]}")" ))
+            sizeFileDeleted=$(( sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
             rmFile "${aFileToClean[$i]}"
         done
         log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
@@ -470,7 +470,7 @@ function main() {
     fi
     timeEnd="$(date +"%s")"
     cleanLockFile
-    log "duration (sec): $((timeEnd - timeStart))"
+    log "duration (sec): $(( timeEnd - timeStart ))"
     log "Save $cmdFrom to $cmdTo End"
 }
 
