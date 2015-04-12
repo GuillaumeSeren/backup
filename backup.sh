@@ -379,8 +379,8 @@ fi
 
 # FUNCTION main() {{{1
 function main() {
-    # Encode the timestamp of the start in hex to make a id.
-    idScriptCall="$(printf "%x\n" "$timeStart")"
+    # Use the PID:
+    idScriptCall="$$"
     log "Save $cmdFrom to $cmdTo Start"
     # Check the lock
     if [ -f "$lockFile" ]; then
