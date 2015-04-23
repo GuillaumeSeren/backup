@@ -115,6 +115,11 @@ function log() {
     if [[ -n "$1" && "$1" != "" ]]; then
         echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
     fi
+    # Do we have the alert flag
+    if [[ -n "$2" && "$2" == "ALERT" ]]; then
+        echo "$dateNow $idScriptCall $1"
+    fi
+
 }
 
 # FUNCTION getUniqueName() {{{1
@@ -385,10 +390,9 @@ function main() {
     # Check the lock
     if [ -f "$lockFile" ]; then
         # The last call is still running
-        echo "The last call is still running"
+        log "The last call is still running" "ALERT"
         lockFileContent="$(cat "$lockFile")"
-        echo "Running since $(date -d @"$lockFileContent")"
-        exit 3
+        log "Running since $(date -d @"$lockFileContent")" "ALERT"
     fi
     log "creating the lock file: $lockFile"
     touch "$lockFile"
