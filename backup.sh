@@ -11,13 +11,17 @@
 # TaskList {{{1
 #@FIXME: We need better test over ssh before rm/add.
 #@TODO: Add a way to get the rsync/tar status.
+#@TODO: Add check on required program.
+#@TODO: Better clean behavior keep 1 archive on last 4 week.
+#@TODO: Better clean behavior keep 1 archive on last 12 month.
+#@TODO: Add new mode agent to parse log and output (mail) important event.
 #@TODO: Add better log, calculate size moved / read.
 #@FIXME: It would be better to expand path like ~
 #@TODO: Count the files on a given period (day/week/month/year).
 #@TODO: Add the getFileNameNotOn period 2 timestamp
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
-#@TODO: Add 2 way SYNC2W to provide 2 way sync, the newer is taken.
+#@TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
 #@TODO: Move log to /var/log.
 #@TODO: Add speed stat mo/s ko/s go/s.
 
