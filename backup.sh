@@ -433,10 +433,10 @@ function main() {
         # Delete the last / if any
         cmdFrom="${cmdFrom%/}"
         pathName="$(basename "$cmdFrom")"
-        tarName="$(getUniqueName "$pathName").tar.gz"
+        tarName="$(getUniqueName "$pathName").tar.xz"
         sizeFileDeleted=0
         log "Archive name: $tarName"
-        log "$(tar -zcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
+        log "$(tar -Jcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
         sizeFileDeleted="$(getFileSize "${cmdTo}/${tarName}")"
         log "TARB file size: ${sizeFileDeleted}"
     elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
