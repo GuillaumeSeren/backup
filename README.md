@@ -5,8 +5,19 @@ Simple backup script for everyday use, focus on efficiency and portability.
 ## Why ?
 *Backup things is really important* !
 
+Try to keep things simple as in `KISS` mantra (*Keep It Simple, Stupid*),
+and I try to get this **cross-platform**, everywhere bash can run.
 I wanted to share my backup script, and also complete it to fit most,
-of common need, like:
+of common need.
+
+## Features
+- Auto generate a unique name for the archive (based on the time).
+- Compress as a small tarball the target (LZMA).
+- Output a clean log to track events, time and duration.
+- Add a lock file to track already running task.
+- Clean old archive other that today.
+- Sync a remote storage (add).
+- Control the date for syncrm (delete).
 
 ## Modes
 The idea behind the modes, is to setup needed feature smallest possible,
@@ -20,15 +31,6 @@ MODE     | DESCRIPTION
 `TARB`   | **Tarball** a directory or file.
 `CLEAN`  | **Clean** other archives than today.
 `SYNCRM` | **Delete** the missing (cleaned) files in the reference.
-
-## Features
-- Auto generate a unique name for the archive (based on the time).
-- Output a clean log to track events, time and duration.
-- Add a lock file to track already running task.
-
-## Philosophy
-Try to keep things simple as in `KISS` mantra (*Keep It Simple, Stupid*),
-and I try to get this **cross-platform**, everywhere bash can run.
 
 ## Usage & Installation
 You can clone this repos in your home directory, like:
