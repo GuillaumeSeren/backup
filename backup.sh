@@ -40,6 +40,9 @@ logFile="$(echo "$0" | rev | cut -d"/" -f1 | rev)"
 logFile="$logPath/${logFile%.*}.log"
 # simple timing
 timeStart="$(date +"%s")"
+# TAR archive infos
+tarParams="-Jcf"
+tarExtension=".tar.xz"
 
 # FUNCTION usage() {{{1
 # Return the helping message for the use.
@@ -433,10 +436,10 @@ function main() {
         # Delete the last / if any
         cmdFrom="${cmdFrom%/}"
         pathName="$(basename "$cmdFrom")"
-        tarName="$(getUniqueName "$pathName").tar.xz"
+        tarName="$(getUniqueName "$pathName")${tarExtension}"
         sizeFileDeleted=0
         log "Archive name: $tarName"
-        log "$(tar -Jcf "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
+        log "$(tar "${tarParams}" "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
         sizeFileDeleted="$(getFileSize "${cmdTo}/${tarName}")"
         log "TARB file size: ${sizeFileDeleted}"
     elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
@@ -445,7 +448,7 @@ function main() {
         sizeFileDeleted=0
         # List all files by name
         IFS=$'\n'
-        fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*.tar.gz"))
+        fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*${tarExtension}"))
         unset IFS
         declare -a aFileToClean
         for (( i=0; i<"${#fileList[@]}"; i++ ))
