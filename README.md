@@ -32,6 +32,13 @@ MODE     | DESCRIPTION
 `CLEAN`  | **Clean** other archives than today.
 `SYNCRM` | **Delete** the missing (cleaned) files in the reference.
 
+## Options
+Options are compatible with several modes, and define small param to setup.
+
+CODE | OPTION    | DESCRIPTION
+-----|-----------|------------
+`-l` | `TV mode` | Limit the bandwith allocated to rsync operation.
+
 ## Usage & Installation
 You can clone this repos in your home directory, like:
 ```
