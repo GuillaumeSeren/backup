@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+#@FIXME: Add a way to calculate the speed for bwlimit, based on time & size.
 #@FIXME: We need better test over ssh before rm/add.
 #@TODO: Add a way to get the rsync/tar status.
 #@TODO: Add check on required program.
@@ -33,6 +34,7 @@
 # 4 - The getFileNameByDay is called with no filename (first parm).
 # 5 - The getValidateFrom arg is not readable, check fs perm.
 # 6 - The getValidateTo arg is not readable/writeable, check fr perm.
+# 7 - The bwlimit is null.
 
 # Default variables {{{1
 # Flags :
@@ -75,6 +77,9 @@ OPTIONS:
                   Note that the sync is 1 way (from -> to).
         "CLEAN":  Clean old tarball, (keep only today).
         "SYNCRM": Delete the missing (cleaned) files on the reference.
+    -l  OPTION TV: Fill the bwlimit param to rsync:
+        By default the value will be in KiB.
+        You can specify other suffixes see rsync man page.
 
 Sample:
     Sync 2 directory
@@ -348,7 +353,7 @@ function rmDir() {
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts "f:t:m:h" OPTION
+while getopts "f:t:m:l:h" OPTION
 do
     flagGetOpts=1
     case $OPTION in
@@ -371,6 +376,15 @@ do
             echo "Please check reading permissions of your file system"
             exit 6
         fi
+        ;;
+    l)
+        rsyncBwLimit="$OPTARG"
+        if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
+            echo "Your rsync bwlimit can not be null"
+            usage
+            exit 7
+        fi
+        rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
         ;;
     m)
         cmdMode="$OPTARG"
@@ -406,12 +420,18 @@ function main() {
     echo "$timeStart" > "$lockFile"
     if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
         log "MODE SYNC"
-        log "$(rsync -az "$cmdFrom" "$cmdTo")"
+        if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
+            log "OPTION TV: $rsyncBwLimit"
+        fi
+        log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
         log "MODE SYNCRM"
+        if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
+            log "OPTION TV: $rsyncBwLimit"
+        fi
         # Calculate files that are in the cmdTo but deleted on from.
         IFS=$'\n'
-        fileList=($(rsync -avz --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
+        fileList=($(rsync -avz "$rsyncBwLimit" --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
         unset IFS
         log "SYNCRM Nb fichier détectés: ${#fileList[@]}"
         sizeFileDeleted=0
@@ -477,7 +497,10 @@ function main() {
         #@FIXME: We should better set cmdMode a default value and use this case for error.
         log "MODE SYNC"
         log "Default mode"
-        log "$(rsync -avz "$cmdfrom" "$cmdTo")"
+        if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
+            log "OPTION TV: $rsyncBwLimit"
+        fi
+        log "$(rsync -avz "$rsyncBwLimit" "$cmdfrom" "$cmdTo")"
     fi
     timeEnd="$(date +"%s")"
     cleanLockFile
