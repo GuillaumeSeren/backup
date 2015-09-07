@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+#@FIXME: Fix rsync call with *no* bwlimit.
 #@FIXME: Add a way to calculate the speed for bwlimit, based on time & size.
 #@FIXME: We need better test over ssh before rm/add.
 #@TODO: Add a way to get the rsync/tar status.
@@ -422,12 +423,16 @@ function main() {
         log "MODE SYNC"
         if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
             log "OPTION TV: $rsyncBwLimit"
+        else
+            rsyncBwLimit="--bwlimit=0"
         fi
         log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
         log "MODE SYNCRM"
         if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
             log "OPTION TV: $rsyncBwLimit"
+        else
+            rsyncBwLimit="--bwlimit=0"
         fi
         # Calculate files that are in the cmdTo but deleted on from.
         IFS=$'\n'
@@ -499,6 +504,8 @@ function main() {
         log "Default mode"
         if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
             log "OPTION TV: $rsyncBwLimit"
+        else
+            rsyncBwLimit="--bwlimit=0"
         fi
         log "$(rsync -avz "$rsyncBwLimit" "$cmdfrom" "$cmdTo")"
     fi
