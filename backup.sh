@@ -9,22 +9,21 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@FIXME: Add a way to calculate the speed for bwlimit, based on time & size.
-#@FIXME: We need better test over ssh before rm/add.
-#@TODO: Add a way to get the rsync/tar status.
 #@TODO: Add check on required program.
-#@TODO: Better clean behavior keep 1 archive on last 4 week.
-#@TODO: Better clean behavior keep 1 archive on last 12 month.
 #@TODO: Add new mode agent to parse log and output (mail) important event.
-#@TODO: Add better log, calculate size moved / read.
-#@FIXME: It would be better to expand path like ~
-#@TODO: Count the files on a given period (day/week/month/year).
+#@TODO: Add a way to calculate the speed for bwlimit, based on time & size.
+#@TODO: We need better test over ssh before rm/add.
+#@TODO: Add a way to get the rsync/tar status.
+#@TODO: Better clean behavior keep 1/4w then 1/m archive.
 #@TODO: Add the getFileNameNotOn period 2 timestamp
+#@TODO: Count the files on a given period (day/week/month/year).
+#@TODO: Add better log, calculate size moved / read.
+#@TODO: Add speed stat mo/s ko/s go/s in the log.
+#@TODO: It would be better to expand path like ~
 #@TODO: Send mail on error, add (e) email option.
 #@TODO: Add a function to check free space before doing archive, add a log.
 #@TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
-#@TODO: Move log to /var/log.
-#@TODO: Add speed stat mo/s ko/s go/s.
+#@TODO: Move log to /var/log & Add logrotate + upgrade doc.
 
 # Error Codes {{{1
 # 0 - Ok
@@ -422,12 +421,16 @@ function main() {
         log "MODE SYNC"
         if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
             log "OPTION TV: $rsyncBwLimit"
+        else
+            rsyncBwLimit="--bwlimit=0"
         fi
         log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
     elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
         log "MODE SYNCRM"
         if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
             log "OPTION TV: $rsyncBwLimit"
+        else
+            rsyncBwLimit="--bwlimit=0"
         fi
         # Calculate files that are in the cmdTo but deleted on from.
         IFS=$'\n'
@@ -499,6 +502,8 @@ function main() {
         log "Default mode"
         if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
             log "OPTION TV: $rsyncBwLimit"
+        else
+            rsyncBwLimit="--bwlimit=0"
         fi
         log "$(rsync -avz "$rsyncBwLimit" "$cmdfrom" "$cmdTo")"
     fi
