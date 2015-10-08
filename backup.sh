@@ -255,7 +255,8 @@ function getValidateFrom() {
         from="$cmdFrom"
     fi
     # We need to detect the type of url:
-    local urlType="$(getUrlType "$from")"
+    local urlType=""
+    urlType="$(getUrlType "$from")"
     if [[ "$urlType" == "local" ]]; then
         # Now test if the target is available
         if [[ -r "$from" ]]; then
@@ -284,7 +285,8 @@ function getValidateTo() {
         to="$cmdTo"
     fi
     # We need to detect the type of url:
-    local urlType="$(getUrlType "$to")"
+    local urlType=""
+    urlType="$(getUrlType "$to")"
     if [[ "$urlType" == "local" ]]; then
         # Now test if the target is available
         if [[ -r "$to" && -w "$to" ]]; then
