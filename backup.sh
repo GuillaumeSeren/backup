@@ -9,21 +9,21 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@TODO: Add check on required program.
-#@TODO: Add new mode agent to parse log and output (mail) important event.
-#@TODO: Add a way to calculate the speed for bwlimit, based on time & size.
-#@TODO: We need better test over ssh before rm/add.
-#@TODO: Add a way to get the rsync/tar status.
-#@TODO: Better clean behavior keep 1/4w then 1/m archive.
-#@TODO: Add the getFileNameNotOn period 2 timestamp
-#@TODO: Count the files on a given period (day/week/month/year).
-#@TODO: Add better log, calculate size moved / read.
-#@TODO: Add speed stat mo/s ko/s go/s in the log.
-#@TODO: It would be better to expand path like ~
-#@TODO: Send mail on error, add (e) email option.
-#@TODO: Add a function to check free space before doing archive, add a log.
-#@TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
-#@TODO: Move log to /var/log & Add logrotate + upgrade doc.
+# @TODO: Add support for long options.
+# @TODO: Add new mode agent to parse log and output (mail) important event.
+# @TODO: Add a way to calculate the speed for bwlimit, based on time & size.
+# @TODO: We need better test over ssh before rm/add.
+# @TODO: Add a way to get the rsync/tar status.
+# @TODO: Better clean behavior keep 1/4w then 1/m archive.
+# @TODO: Add the getFileNameNotOn period 2 timestamp
+# @TODO: Count the files on a given period (day/week/month/year).
+# @TODO: Add better log, calculate size moved / read.
+# @TODO: Add speed stat mo/s ko/s go/s in the log.
+# @TODO: It would be better to expand path like ~
+# @TODO: Send mail on error, add (e) email option.
+# @TODO: Add a function to check free space before doing archive, add a log.
+# @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
+# @TODO: Move log to /var/log & Add logrotate + upgrade doc.
 
 # Error Codes {{{1
 # 0 - Ok
@@ -34,8 +34,10 @@
 # 5 - The getValidateFrom arg is not readable, check fs perm.
 # 6 - The getValidateTo arg is not readable/writeable, check fr perm.
 # 7 - The bwlimit is null.
+# 8 - Missing dependencies
 
 # Default variables {{{1
+dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
 flagGetOpts=0
 dateNow="$(date +"%Y%m%d-%H:%M:%S")"
@@ -352,6 +354,26 @@ function rmDir() {
     fi
 }
 
+# FUNCTION checkDependencies() {{{1
+# Test if needed dependencies are available.
+function checkDependencies()
+{
+  deps_ok='YES'
+  for dep in $1
+  do
+    if  ! which "$dep" &>/dev/null;  then
+      echo "This script requires $dep to run but it is not installed"
+      deps_ok='NO'
+    fi
+  done
+  if [[ "$deps_ok" == "NO" ]]; then
+    echo "This script need : $1"
+    echo "Please install them, before using this script !"
+    exit 8
+  else
+    return 0
+  fi
+}
 # GETOPTS {{{1
 # Get the param of the script.
 while getopts "f:t:m:l:h" OPTION
@@ -409,6 +431,8 @@ function main() {
     # Use the PID:
     idScriptCall="$$"
     log "Save $cmdFrom to $cmdTo Start"
+    log "Check dependencies: ${dependencies}"
+    checkDependencies "$dependencies"
     # Check the lock
     if [ -f "$lockFile" ]; then
         # The last call is still running
@@ -517,3 +541,6 @@ function main() {
 }
 
 main
+
+# }}}
+# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
