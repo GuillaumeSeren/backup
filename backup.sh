@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@TODO: Add check dependencies on required program.
 #@TODO: Add support for long options.
 #@TODO: Add new mode agent to parse log and output (mail) important event.
 #@TODO: Add a way to calculate the speed for bwlimit, based on time & size.
@@ -35,8 +34,10 @@
 # 5 - The getValidateFrom arg is not readable, check fs perm.
 # 6 - The getValidateTo arg is not readable/writeable, check fr perm.
 # 7 - The bwlimit is null.
+# 8 - Missing dependencies
 
 # Default variables {{{1
+dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
 flagGetOpts=0
 dateNow="$(date +"%Y%m%d-%H:%M:%S")"
@@ -353,6 +354,26 @@ function rmDir() {
     fi
 }
 
+# FUNCTION checkDependencies() {{{1
+# Test if needed dependencies are available.
+function checkDependencies()
+{
+  deps_ok='YES'
+  for dep in $1
+  do
+    if  ! which "$dep" &>/dev/null;  then
+      echo "This script requires $dep to run but it is not installed"
+      deps_ok='NO'
+    fi
+  done
+  if [[ "$deps_ok" == "NO" ]]; then
+    echo "This script need : $1"
+    echo "Please install them, before using this script !"
+    exit 8
+  else
+    return 0
+  fi
+}
 # GETOPTS {{{1
 # Get the param of the script.
 while getopts "f:t:m:l:h" OPTION
@@ -410,6 +431,8 @@ function main() {
     # Use the PID:
     idScriptCall="$$"
     log "Save $cmdFrom to $cmdTo Start"
+    log "Check dependencies: ${dependencies}"
+    checkDependencies "$dependencies"
     # Check the lock
     if [ -f "$lockFile" ]; then
         # The last call is still running
@@ -518,3 +541,6 @@ function main() {
 }
 
 main
+
+# }}}
+# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
