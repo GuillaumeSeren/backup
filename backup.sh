@@ -9,7 +9,8 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@TODO: Add check on required program.
+#@TODO: Add check dependencies on required program.
+#@TODO: Add support for long options.
 #@TODO: Add new mode agent to parse log and output (mail) important event.
 #@TODO: Add a way to calculate the speed for bwlimit, based on time & size.
 #@TODO: We need better test over ssh before rm/add.
