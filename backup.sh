@@ -9,21 +9,21 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-#@TODO: Add support for long options.
-#@TODO: Add new mode agent to parse log and output (mail) important event.
-#@TODO: Add a way to calculate the speed for bwlimit, based on time & size.
-#@TODO: We need better test over ssh before rm/add.
-#@TODO: Add a way to get the rsync/tar status.
-#@TODO: Better clean behavior keep 1/4w then 1/m archive.
-#@TODO: Add the getFileNameNotOn period 2 timestamp
-#@TODO: Count the files on a given period (day/week/month/year).
-#@TODO: Add better log, calculate size moved / read.
-#@TODO: Add speed stat mo/s ko/s go/s in the log.
-#@TODO: It would be better to expand path like ~
-#@TODO: Send mail on error, add (e) email option.
-#@TODO: Add a function to check free space before doing archive, add a log.
-#@TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
-#@TODO: Move log to /var/log & Add logrotate + upgrade doc.
+# @TODO: Add support for long options.
+# @TODO: Add new mode agent to parse log and output (mail) important event.
+# @TODO: Add a way to calculate the speed for bwlimit, based on time & size.
+# @TODO: We need better test over ssh before rm/add.
+# @TODO: Add a way to get the rsync/tar status.
+# @TODO: Better clean behavior keep 1/4w then 1/m archive.
+# @TODO: Add the getFileNameNotOn period 2 timestamp
+# @TODO: Count the files on a given period (day/week/month/year).
+# @TODO: Add better log, calculate size moved / read.
+# @TODO: Add speed stat mo/s ko/s go/s in the log.
+# @TODO: It would be better to expand path like ~
+# @TODO: Send mail on error, add (e) email option.
+# @TODO: Add a function to check free space before doing archive, add a log.
+# @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
+# @TODO: Move log to /var/log & Add logrotate + upgrade doc.
 
 # Error Codes {{{1
 # 0 - Ok
