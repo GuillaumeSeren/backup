@@ -11,13 +11,13 @@ I wanted to share my backup script, and also complete it to fit most,
 of common need.
 
 ## Features
-- Auto generate a unique name for the archive (based on the time).
-- Compress as a small tarball the target (LZMA).
-- Output a clean log to track events, time and duration.
-- Add a lock file to track already running task.
-- Clean old archive other that today.
-- Sync a remote storage (add).
-- Control the date for syncrm (delete).
+* Auto generate a unique name for the archive (based on the time).
+* Compress as a small tarball the target (LZMA).
+* Output a clean log to track events, time and duration.
+* Add a lock file to track already running task.
+* Clean old archive other that today.
+* Sync a remote storage (add).
+* Control the date for syncrm (delete).
 
 ## Modes
 The idea behind the modes, is to setup needed feature smallest possible,
