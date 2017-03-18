@@ -126,12 +126,17 @@ function log() {
     fi
     # test if it is writeable
     # Export the create / open / check file outside
-    if [[ -n "$1" && "$1" != "" ]]; then
+    if [[ -n "$1" && "$1" != "" && -z "$2" ]]; then
         echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
-    fi
-    # Do we have the alert flag
-    if [[ -n "$2" && "$2" == "ALERT" ]]; then
-        echo "$dateNow $idScriptCall $1"
+    else if [[ -n "$1" && "$1" != "" && -n "$2" && "$2" == "VERBOSE" ]]; then
+      # This is verbose stuff not critical for production
+      if [[ -n "$cmdVerbose" && "$cmdVerbose" == 1 ]]; then
+        echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
+      fi
+    else if [[ -n "$1" && "$1" != "" && -n "$2" && "$2" == "ALERT" ]]; then
+      echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
+      # Do we have the alert flag
+      echo "$dateNow $idScriptCall $1"
     fi
 
 }
@@ -202,7 +207,7 @@ function getFileNameNotOnDay() {
 function cleanLockFile() {
     # test if lock file has well been made
     if [[ -n "$lockFile" && "$lockFile" != "" ]]; then
-        log "cleaning the lock file: $lockFile"
+        log "cleaning the lock file: $lockFile" "VERBOSE"
         rmFile "$lockFile"
     fi
 }
@@ -377,7 +382,7 @@ function checkDependencies()
 }
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts "f:t:m:l:h" OPTION
+while getopts "f:t:m:l:vh" OPTION
 do
     flagGetOpts=1
     case $OPTION in
@@ -413,6 +418,9 @@ do
     m)
         cmdMode="$OPTARG"
         ;;
+    v)
+        cmdVerbose=1
+        ;;
     ?)
         echo "commande $1 inconnue"
         usage
@@ -432,7 +440,7 @@ function main() {
     # Use the PID:
     idScriptCall="$$"
     log "Save $cmdFrom to $cmdTo Start"
-    log "Check dependencies: ${dependencies}"
+    log "Check dependencies: ${dependencies}" "VERBOSE"
     checkDependencies "$dependencies"
     # Check the lock
     if [ -f "$lockFile" ]; then
