@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Add support for long options.
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Add a way to get the rsync/tar status.
@@ -379,9 +378,11 @@ function checkDependencies()
 }
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts "f:t:m:l:vh" OPTION
+optspec="f:t:-:m:l:vh"
+while getopts "${optspec}" optchar;
 do
   flagGetOpts=1
+  # Short options
   case $OPTION in
     h)
       usage
@@ -418,9 +419,53 @@ do
     v)
       cmdVerbose=1
       ;;
-    ?)
-      echo "commande $1 inconnue"
-      usage
+    -)
+      case "${OPTARG}" in
+        # Long options
+        help)
+          usage
+          exit 1
+          ;;
+        from)
+          cmdFrom="$(getValidateFrom "$OPTARG")"
+          if [[ "$cmdFrom" == "" ]]; then
+            echo "The from target is invalid: $OPTARG"
+            echo "Please check reading permissions of your file system"
+            exit 5
+          fi
+          ;;
+        to)
+          cmdTo="$(getValidateTo "$OPTARG")"
+          if [[ "$cmdTo" == "" ]]; then
+            echo "The to target is invalid: $OPTARG"
+            echo "Please check reading permissions of your file system"
+            exit 6
+          fi
+          ;;
+        location)
+          rsyncBwLimit="$OPTARG"
+          if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
+            echo "Your rsync bwlimit can not be null"
+            usage
+            exit 7
+          fi
+          rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
+          ;;
+        mode)
+          cmdMode="$OPTARG"
+          ;;
+        verbose)
+          cmdVerbose=1
+          ;;
+        *)
+          echo "Unknown option --${OPTARG}" >&2
+          usage >&2;
+          exit 1
+          ;;
+      esac;;
+    *)
+      echo "Unknown option -${OPTARG}" >&2
+      usage >&2;
       exit
       ;;
   esac
