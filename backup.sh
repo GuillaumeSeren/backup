@@ -60,24 +60,25 @@ Backup a target in a location path.
 
 
 OPTIONS:
-  -h  Show this message.
-  -v  Activate verbose mode, show debug messages.
-  -f  Path from.
-  -t  Location to.
-  Path can be remote or local:
+  -h, --help        Show this message.
+  -v, --verbose     Activate verbose mode, show debug messages.
+  -f, --from        Location* from.
+  -t  --location    Location* to.
+  *Locations can be remote or local:
     -Local: (~/foo or /foo/bar/).
     -Remote :
     - ssh_alias:~/foo
     - user@127.0.0.1:~/foo
-  -m  Define mode, can be:
-    "TARB":   Create a tarball. (LOCAL ONLY)
-    "SYNC":   Sync 2 directory (default).
-              Note that the sync is 1 way (from -> to).
-    "CLEAN":  Clean old tarball, (keep only today).
-    "SYNCRM": Delete the missing (cleaned) files on the reference.
-  -l  OPTION TV: Fill the bwlimit param to rsync:
-    By default the value will be in KiB.
-    You can specify other suffixes see rsync man page.
+  -m, --mode [opt]  Define mode, can be:
+      "TARB":       Create a tarball. (LOCAL ONLY)
+      "SYNC":       Sync 2 directory (default).
+                    Note that the sync is 1 way (from -> to).
+      "CLEAN":      Clean old tarball, (keep only today).
+      "SYNCRM":     Delete the missing (cleaned) files on the reference.
+  -l, --limit       Limit the bandwith available:
+      0             Is no limit (default).
+      By default the value will be in KiB.
+      You can specify other suffixes see rsync man page.
 
 Sample:
   Sync 2 directory
