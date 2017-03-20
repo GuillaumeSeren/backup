@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Add support for long options.
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Add a way to get the rsync/tar status.
@@ -57,30 +56,31 @@ function usage()
 
   usage: "$0" options
 
-  This script backup a target in a location path.
+Backup a target in a location path.
 
 
-  OPTIONS:
-  -h  Show this message.
-  -v  Activate verbose mode.
-  -f  Path from.
-  -t  Location to.
-  Path can be remote or local:
-  -Local: (~/foo or /foo/bar/).
-  -Remote :
-  - ssh_alias:~/foo
-  - user@127.0.0.1:~/foo
-  -m  Define mode, can be:
-  "TARB":   Create a tarball. (LOCAL ONLY)
-  "SYNC":   Sync 2 directory (default).
-  Note that the sync is 1 way (from -> to).
-  "CLEAN":  Clean old tarball, (keep only today).
-  "SYNCRM": Delete the missing (cleaned) files on the reference.
-  -l  OPTION TV: Fill the bwlimit param to rsync:
-  By default the value will be in KiB.
-  You can specify other suffixes see rsync man page.
+OPTIONS:
+  -h, --help        Show this message.
+  -v, --verbose     Activate verbose mode, show debug messages.
+  -f, --from        Location* from.
+  -t  --location    Location* to.
+  *Locations can be remote or local:
+    -Local: (~/foo or /foo/bar/).
+    -Remote :
+    - ssh_alias:~/foo
+    - user@127.0.0.1:~/foo
+  -m, --mode [opt]  Define mode, can be:
+      "TARB":       Create a tarball. (LOCAL ONLY)
+      "SYNC":       Sync 2 directory (default).
+                    Note that the sync is 1 way (from -> to).
+      "CLEAN":      Clean old tarball, (keep only today).
+      "SYNCRM":     Delete the missing (cleaned) files on the reference.
+  -l, --limit       Limit the bandwith available:
+      0             Is no limit (default).
+      By default the value will be in KiB.
+      You can specify other suffixes see rsync man page.
 
-  Sample:
+Sample:
   Sync 2 directory
   "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNC
   Make a tarball of a path, save it in the location.
@@ -379,9 +379,11 @@ function checkDependencies()
 }
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts "f:t:m:l:vh" OPTION
+optspec="f:t:-:m:l:vh"
+while getopts "${optspec}" optchar;
 do
   flagGetOpts=1
+  # Short options
   case $OPTION in
     h)
       usage
@@ -418,9 +420,53 @@ do
     v)
       cmdVerbose=1
       ;;
-    ?)
-      echo "commande $1 inconnue"
-      usage
+    -)
+      case "${OPTARG}" in
+        # Long options
+        help)
+          usage
+          exit 1
+          ;;
+        from)
+          cmdFrom="$(getValidateFrom "$OPTARG")"
+          if [[ "$cmdFrom" == "" ]]; then
+            echo "The from target is invalid: $OPTARG"
+            echo "Please check reading permissions of your file system"
+            exit 5
+          fi
+          ;;
+        to)
+          cmdTo="$(getValidateTo "$OPTARG")"
+          if [[ "$cmdTo" == "" ]]; then
+            echo "The to target is invalid: $OPTARG"
+            echo "Please check reading permissions of your file system"
+            exit 6
+          fi
+          ;;
+        location)
+          rsyncBwLimit="$OPTARG"
+          if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
+            echo "Your rsync bwlimit can not be null"
+            usage
+            exit 7
+          fi
+          rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
+          ;;
+        mode)
+          cmdMode="$OPTARG"
+          ;;
+        verbose)
+          cmdVerbose=1
+          ;;
+        *)
+          echo "Unknown option --${OPTARG}" >&2
+          usage >&2;
+          exit 1
+          ;;
+      esac;;
+    *)
+      echo "Unknown option -${OPTARG}" >&2
+      usage >&2;
       exit
       ;;
   esac
