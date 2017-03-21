@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Validate mandatory option are here before doing anything
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Add a way to get the rsync/tar status.
@@ -63,7 +64,7 @@ OPTIONS:
   -h, --help        Show this message.
   -v, --verbose     Activate verbose mode, show debug messages.
   -f, --from        Location* from.
-  -t  --location    Location* to.
+  -t  --to          Location* to.
   *Locations can be remote or local:
     -Local: (~/foo or /foo/bar/).
     -Remote :
@@ -379,12 +380,11 @@ function checkDependencies()
 }
 # GETOPTS {{{1
 # Get the param of the script.
-optspec="f:t:-:m:l:vh"
-while getopts "${optspec}" optchar;
-do
+optspec=":ftml-:vh"
+while getopts "$optspec" optchar; do
   flagGetOpts=1
   # Short options
-  case $OPTION in
+  case "${optchar}" in
     h)
       usage
       exit 1
@@ -423,12 +423,14 @@ do
     -)
       case "${OPTARG}" in
         # Long options
+        # https://stackoverflow.com/questions/402377/using-getopts-in-bash-shell-script-to-get-long-and-short-command-line-options
         help)
           usage
           exit 1
           ;;
         from)
-          cmdFrom="$(getValidateFrom "$OPTARG")"
+          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          cmdFrom="$(getValidateFrom "$val")"
           if [[ "$cmdFrom" == "" ]]; then
             echo "The from target is invalid: $OPTARG"
             echo "Please check reading permissions of your file system"
@@ -436,15 +438,18 @@ do
           fi
           ;;
         to)
-          cmdTo="$(getValidateTo "$OPTARG")"
+          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          # echo $val
+          cmdTo="$(getValidateTo "$val")"
           if [[ "$cmdTo" == "" ]]; then
             echo "The to target is invalid: $OPTARG"
             echo "Please check reading permissions of your file system"
             exit 6
           fi
           ;;
-        location)
-          rsyncBwLimit="$OPTARG"
+        limit)
+          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          rsyncBwLimit="$val"
           if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
             echo "Your rsync bwlimit can not be null"
             usage
@@ -453,19 +458,20 @@ do
           rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
           ;;
         mode)
-          cmdMode="$OPTARG"
+          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          cmdMode="$val"
           ;;
         verbose)
           cmdVerbose=1
           ;;
         *)
-          echo "Unknown option --${OPTARG}" >&2
+          echo "Unknown long option --${OPTARG}" >&2
           usage >&2;
           exit 1
           ;;
       esac;;
     *)
-      echo "Unknown option -${OPTARG}" >&2
+      echo "Unknown short option -${OPTARG}" >&2
       usage >&2;
       exit
       ;;
