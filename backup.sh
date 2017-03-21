@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Validate mandatory option are here before doing anything
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Add a way to get the rsync/tar status.
@@ -63,7 +64,7 @@ OPTIONS:
   -h, --help        Show this message.
   -v, --verbose     Activate verbose mode, show debug messages.
   -f, --from        Location* from.
-  -t  --location    Location* to.
+  -t  --to          Location* to.
   *Locations can be remote or local:
     -Local: (~/foo or /foo/bar/).
     -Remote :
