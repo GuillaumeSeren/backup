@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Validate mandatory option are here before doing anything
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Add a way to get the rsync/tar status.
@@ -33,6 +32,7 @@
 # 6 - The getValidateTo arg is not readable/writeable, check fr perm.
 # 7 - The bwlimit is null.
 # 8 - Missing dependencies
+# 9 - Some default param is missing
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
@@ -439,7 +439,6 @@ while getopts "$optspec" optchar; do
           ;;
         to)
           val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-          # echo $val
           cmdTo="$(getValidateTo "$val")"
           if [[ "$cmdTo" == "" ]]; then
             echo "The to target is invalid: $OPTARG"
@@ -478,10 +477,14 @@ while getopts "$optspec" optchar; do
   esac
 done
 # We check if getopts did not find no any param
-if [ "$flagGetOpts" == 0 ]; then
+if [[ "$flagGetOpts" == 0 ]]; then
   echo 'This script cannot be launched without options.'
   usage
   exit 1
+elif [[ -z "${cmdFrom}" || -z "${cmdTo}" || -z "${cmdMode}" ]]; then
+  echo 'You need to setup at least 3 params: from, to, mode'
+  exit 9
+
 fi
 
 # FUNCTION main() {{{1
