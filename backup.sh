@@ -9,6 +9,9 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Refactor eit function to send mail if provided
+# @TODO: Create a new log to store the current call
+# @TODO: Send mail on error with current log
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Add a way to get the rsync/tar status.
@@ -18,7 +21,6 @@
 # @TODO: Add better log, calculate size moved / read.
 # @TODO: Add speed stat mo/s ko/s go/s in the log.
 # @TODO: Add a function to check free space before doing archive, add a log.
-# @TODO: Send mail on error, add (e) email option.
 # @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
 # @TODO: Move log to /var/log + package + logrotate
 
@@ -380,7 +382,7 @@ function checkDependencies()
 }
 # GETOPTS {{{1
 # Get the param of the script.
-optspec=":ftml-:vh"
+optspec=":ftml-:evh"
 while getopts "$optspec" optchar; do
   flagGetOpts=1
   # Short options
@@ -416,6 +418,9 @@ while getopts "$optspec" optchar; do
       ;;
     m)
       cmdMode="$OPTARG"
+      ;;
+    e)
+      cmdMail="$OPTARG"
       ;;
     v)
       cmdVerbose=1
@@ -462,6 +467,10 @@ while getopts "$optspec" optchar; do
           ;;
         verbose)
           cmdVerbose=1
+          ;;
+        email)
+          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          cmdMail="$val"
           ;;
         *)
           echo "Unknown long option --${OPTARG}" >&2
