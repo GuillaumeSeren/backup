@@ -82,6 +82,7 @@ OPTIONS:
       0             Is no limit (default).
       By default the value will be in KiB.
       You can specify other suffixes see rsync man page.
+  -e  --email       Specify a email to contact if error.
 
 Sample:
   Sync 2 directory
