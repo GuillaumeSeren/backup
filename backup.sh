@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Refactor eit function to send mail if provided
 # @TODO: Create a new log to store the current call
 # @TODO: Send mail on error with current log
 # @TODO: Add new mode agent to parse log and output (mail) important event.
@@ -25,16 +24,19 @@
 # @TODO: Move log to /var/log + package + logrotate
 
 # Error Codes {{{1
-# 0 - Ok
-# 1 - Error in cmd / options
-# 2 - Error log file
-# 3 - The last call is still running
-# 4 - The getFileNameByDay is called with no filename (first parm).
-# 5 - The getValidateFrom arg is not readable, check fs perm.
-# 6 - The getValidateTo arg is not readable/writeable, check fr perm.
-# 7 - The bwlimit is null.
-# 8 - Missing dependencies
-# 9 - Some default param is missing
+# 0  - Ok
+# 1  - Error in cmd / options
+# 2  - Error log file
+# 3  - The last call is still running
+# 4  - The getFileNameByDay is called with no filename (first parm).
+# 5  - The getValidateFrom arg is not readable, check fs perm.
+# 6  - The getValidateTo arg is not readable/writeable, check fr perm.
+# 7  - The bwlimit is null.
+# 8  - Missing dependencies
+# 9  - Some default param is missing
+# 10 - Error unknown options
+# 11 - Error in function exitWrapper
+
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
@@ -107,7 +109,7 @@ function createLogFile() {
   # If the file is still no variable
   if [ ! -w "$logFile" ]; then
     echo "The log file is not writeable, please check permissions."
-    exit 2
+    exitWrapper 2
   fi
   echo "$earlyLog"
 }
@@ -162,7 +164,7 @@ function getFileNameOnDay() {
   if [[ -z "$1" && "$1" == "" ]]; then
     echo "Error: You can not call the getFileNameByDay without filename"
     cleanLockFile
-    exit 4
+    exitWrapper 4
   fi
   # Check the date (day)
   if [[ -n $2 && $2 != "" ]]; then
@@ -186,7 +188,7 @@ function getFileNameNotOnDay() {
   if [[ -z "$1" && "$1" == "" ]]; then
     echo "Error: You can not call the getFileNameNotOnDay without filename"
     cleanLockFile
-    exit 4
+    exitWrapper 4
   fi
   # Check the date (day)
   if [[ -n "$2" && "$2" != "" ]]; then
@@ -376,11 +378,29 @@ function checkDependencies()
   if [[ "$deps_ok" == "NO" ]]; then
     echo "This script need : $1"
     echo "Please install them, before using this script !"
-    exit 8
+    exitWrapper 8
   else
     return 0
   fi
 }
+
+# FUNCTION exitWrapper() {{{1
+function exitWrapper()
+{
+  # Embed the needed process to do while exiting
+  if [[ -z "${$1}" && "${$1}" != '' ]]; then
+    if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
+      echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
+    else
+      echo "The backup script failed with error ${1}"
+      exit "${1}"
+    fi
+  else
+    echo "The backup script failed with error 11"
+    exit "11"
+  fi
+}
+
 # GETOPTS {{{1
 # Get the param of the script.
 optspec=":ftml-:evh"
@@ -390,14 +410,14 @@ while getopts "$optspec" optchar; do
   case "${optchar}" in
     h)
       usage
-      exit 1
+      exitWrapper 1
       ;;
     f)
       cmdFrom="$(getValidateFrom "$OPTARG")"
       if [[ "$cmdFrom" == "" ]]; then
         echo "The from target is invalid: $OPTARG"
         echo "Please check reading permissions of your file system"
-        exit 5
+        exitWrapper 5
       fi
       ;;
     t)
@@ -405,7 +425,7 @@ while getopts "$optspec" optchar; do
       if [[ "$cmdTo" == "" ]]; then
         echo "The to target is invalid: $OPTARG"
         echo "Please check reading permissions of your file system"
-        exit 6
+        exitWrapper 6
       fi
       ;;
     l)
@@ -413,7 +433,7 @@ while getopts "$optspec" optchar; do
       if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
         echo "Your rsync bwlimit can not be null"
         usage
-        exit 7
+        exitWrapper 7
       fi
       rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
       ;;
@@ -432,7 +452,7 @@ while getopts "$optspec" optchar; do
         # https://stackoverflow.com/questions/402377/using-getopts-in-bash-shell-script-to-get-long-and-short-command-line-options
         help)
           usage
-          exit 1
+          exitWrapper 1
           ;;
         from)
           val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -440,7 +460,7 @@ while getopts "$optspec" optchar; do
           if [[ "$cmdFrom" == "" ]]; then
             echo "The from target is invalid: $OPTARG"
             echo "Please check reading permissions of your file system"
-            exit 5
+            exitWrapper 5
           fi
           ;;
         to)
@@ -449,7 +469,7 @@ while getopts "$optspec" optchar; do
           if [[ "$cmdTo" == "" ]]; then
             echo "The to target is invalid: $OPTARG"
             echo "Please check reading permissions of your file system"
-            exit 6
+            exitWrapper 6
           fi
           ;;
         limit)
@@ -458,7 +478,7 @@ while getopts "$optspec" optchar; do
           if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
             echo "Your rsync bwlimit can not be null"
             usage
-            exit 7
+            exitWrapper 7
           fi
           rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
           ;;
@@ -476,13 +496,13 @@ while getopts "$optspec" optchar; do
         *)
           echo "Unknown long option --${OPTARG}" >&2
           usage >&2;
-          exit 1
+          exitWrapper 1
           ;;
       esac;;
     *)
       echo "Unknown short option -${OPTARG}" >&2
       usage >&2;
-      exit
+      exitWrapper 10
       ;;
   esac
 done
@@ -490,10 +510,10 @@ done
 if [[ "$flagGetOpts" == 0 ]]; then
   echo 'This script cannot be launched without options.'
   usage
-  exit 1
+  exitWrapper 1
 elif [[ -z "${cmdFrom}" || -z "${cmdTo}" || -z "${cmdMode}" ]]; then
   echo 'You need to setup at least 3 params: from, to, mode'
-  exit 9
+  exitWrapper 9
 
 fi
 
