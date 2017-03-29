@@ -1,6 +1,27 @@
 backup
 ======
 Simple backup script for everyday use, focus on efficiency and portability.
+```
+ ___________________________.
+|;;|                     |;;||
+|[]|---------------------|[]||
+|;;|                     |;;||
+|;;|                     |;;||
+|;;|                     |;;||
+|;;|                     |;;||
+|;;|                     |;;||
+|;;|                     |;;||
+|;;|_____________________|;;||
+|;;;;;;;;;;;;;;;;;;;;;;;;;;;||
+|;;;;;;_______________ ;;;;;||
+|;;;;;|  ___          |;;;;;||
+|;;;;;| |;;;|         |;;;;;||
+|;;;;;| |;;;|         |;;;;;||
+|;;;;;| |;;;|         |;;;;;||
+|;;;;;| |;;;|         |;;;;;||
+|;;;;;| |___|         |;;;;;||
+\_____|_______________|_____||
+```
 
 ## Why ?
 *Backup things is really important* !
@@ -37,8 +58,13 @@ Options are compatible with several modes, and define small param to setup.
 
 CODE | OPTION    | DESCRIPTION
 -----|-----------|------------
-`-l` | `TV mode` | Limit the bandwith allocated to rsync operation.
+`-v` | `verbose` | Add verbose mode.
+`-h` | `help`    | Show help.
+`-f` | `from`    | Location **from**.
+`-t` | `to`      | Location **to**.
+`-l` | `limit`   | Limit the bandwith allocated to rsync operation.
 `-e` | `email`   | Email to use in case of error.
+
 
 ## Usage & Installation
 You can clone this repos in your home directory, like:
