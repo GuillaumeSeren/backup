@@ -37,7 +37,6 @@
 # 10 - Error unknown options
 # 11 - Error in function exitWrapper
 
-
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
