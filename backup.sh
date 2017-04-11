@@ -402,7 +402,7 @@ function exitWrapper()
 
 # GETOPTS {{{1
 # Get the param of the script.
-optspec=":ftml-:evh"
+optspec=":f:t:m:l:-:evh"
 while getopts "$optspec" optchar; do
   flagGetOpts=1
   # Short options
