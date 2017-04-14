@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Create a new log to store the current call
 # @TODO: Send mail on error with current log
 # @TODO: Add new mode agent to parse log and output (mail) important event.
@@ -629,8 +630,7 @@ function main() {
     log "Save $cmdFrom to $cmdTo End"
   fi
 }
-
 main
-
 # }}}
+
 # vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
