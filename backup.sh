@@ -131,6 +131,12 @@ function log() {
   if [[ ! -w "$logFile" ]]; then
     globalLog="$(createLogFile "${logFile}")"
   fi
+  # Do we have some early log to catch
+  if [[ -n "$globalLog" && "globalLog" != "" ]]; then
+    echo "$dateNow $idScriptCall $globalLog" >> "$globalLog" 2>&1
+    # Clear earlyLog after displaying it
+    unset globalLog
+  fi
   if [[ ! -w "$logFileActual" ]]; then
     earlyLog="$(createLogFile "${logFileActual}")"
   fi
