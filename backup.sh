@@ -9,7 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Create a new log to store the current call
+# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Send mail on error with current log
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
@@ -45,6 +45,8 @@ dateNow="$(date +"%Y%m%d-%H:%M:%S")"
 logPath="$(dirname "$0")"
 lockFile="$logPath/$(echo "$@" | sha1sum | cut -d ' ' -f1).lock"
 logFile="$(echo "$0" | rev | cut -d"/" -f1 | rev)"
+# This is for the actual run
+logFileActual="$logPath/${logFile%.*}-${dateNow}.log"
 logFile="$logPath/${logFile%.*}.log"
 # simple timing
 timeStart="$(date +"%s")"
@@ -100,13 +102,21 @@ DOC
 
 # FUNCTION createlogFile() {{{1
 function createLogFile() {
+  local logFileLocal=''
+  if [[ -n "$1" && "$1" != '' ]]; then
+    logFileLocal="$1"
+  else
+    # If no parm take default log file
+    logFileLocal="$logFile"
+  fi
+
   # Touch the file
-  if [ ! -f "$logFile" ]; then
-    earlyLog="Creation log file: $logFile"
-    touch "$logFile"
+  if [[ ! -f "$logFileLocal" ]]; then
+    earlyLog="Creation log file: $logFileLocal"
+    touch "$logFileLocal"
   fi
   # If the file is still no variable
-  if [ ! -w "$logFile" ]; then
+  if [ ! -w "$logFileLocal" ]; then
     echo "The log file is not writeable, please check permissions."
     exitWrapper 2
   fi
@@ -115,10 +125,18 @@ function createLogFile() {
 
 # FUNCTION log() {{{1
 function log() {
-  dateNow="$(date +"%Y%m%d-%H:%M:%S")"
   # We need to check if the file is available
   if [[ ! -w "$logFile" ]]; then
-    earlyLog="$(createLogFile)"
+    globalLog="$(createLogFile "${logFile}")"
+  fi
+  # Do we have some early log to catch
+  if [[ -n "$globalLog" && "globalLog" != "" ]]; then
+    echo "$dateNow $idScriptCall $globalLog" >> "$globalLog" 2>&1
+    # Clear earlyLog after displaying it
+    unset globalLog
+  fi
+  if [[ ! -w "$logFileActual" ]]; then
+    earlyLog="$(createLogFile "${logFileActual}")"
   fi
   # Do we have some early log to catch
   if [[ -n "$earlyLog" && "$earlyLog" != "" ]]; then
@@ -129,14 +147,14 @@ function log() {
   # test if it is writeable
   # Export the create / open / check file outside
   if [[ -n "$1" && "$1" != "" && -z "$2" ]]; then
-    echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
+    echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
   elif [[ -n "$1" && "$1" != "" && -n "$2" && "$2" == "VERBOSE" ]]; then
     # This is verbose stuff not critical for production
     if [[ -n "$cmdVerbose" && "$cmdVerbose" == 1 ]]; then
-      echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
+      echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
     fi
   elif [[ -n "$1" && "$1" != "" && -n "$2" && "$2" == "ALERT" ]]; then
-    echo "$dateNow $idScriptCall $1" >> "$logFile" 2>&1
+    echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
     # Do we have the alert flag
     echo "$dateNow $idScriptCall $1"
   fi
@@ -390,12 +408,18 @@ function exitWrapper()
   if [[ -z "${$1}" && "${$1}" != '' ]]; then
     if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
       echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
+      # We should also send a copy by mail @TODO
+      cat "${logFileActual}" >> "${logFile}"
     else
       echo "The backup script failed with error ${1}"
+      # We should also send a copy by mail @TODO
+      cat "${logFileActual}" >> "${logFile}"
       exit "${1}"
     fi
   else
     echo "The backup script failed with error 11"
+    # We should also send a copy by mail @TODO
+    cat "${logFileActual}" >> "${logFile}"
     exit "11"
   fi
 }
@@ -628,9 +652,12 @@ function main() {
     log "duration (sec): $(( timeEnd - timeStart ))"
     log "Save $cmdFrom to $cmdTo End"
   fi
+  # if we go here we can add local log to global
+  cat "${logFileActual}" >> "${logFile}"
+  # Then clean logFileActual
+  rm "${logFileActual}"
 }
-
 main
-
 # }}}
+
 # vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
