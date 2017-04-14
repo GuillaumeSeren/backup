@@ -404,12 +404,18 @@ function exitWrapper()
   if [[ -z "${$1}" && "${$1}" != '' ]]; then
     if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
       echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
+      # We should also send a copy by mail @TODO
+      cat "${logFileActual}" >> "${logFile}"
     else
       echo "The backup script failed with error ${1}"
+      # We should also send a copy by mail @TODO
+      cat "${logFileActual}" >> "${logFile}"
       exit "${1}"
     fi
   else
     echo "The backup script failed with error 11"
+      # We should also send a copy by mail @TODO
+      cat "${logFileActual}" >> "${logFile}"
     exit "11"
   fi
 }
