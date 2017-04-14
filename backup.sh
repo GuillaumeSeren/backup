@@ -10,7 +10,6 @@
 
 # TaskList {{{1
 # @TODO: Add support for relative path to getValidateTo/From()
-# @TODO: Create a new log to store the current call
 # @TODO: Send mail on error with current log
 # @TODO: Add new mode agent to parse log and output (mail) important event.
 # @TODO: We need better test over ssh before rm/add.
