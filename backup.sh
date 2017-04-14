@@ -43,7 +43,6 @@ dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
 flagGetOpts=0
 dateNow="$(date +"%Y%m%d-%H:%M:%S")"
-# dateNow="$(date +"%Y%m%d-%H:%M:%S")"
 logPath="$(dirname "$0")"
 lockFile="$logPath/$(echo "$@" | sha1sum | cut -d ' ' -f1).lock"
 logFile="$(echo "$0" | rev | cut -d"/" -f1 | rev)"
@@ -420,8 +419,8 @@ function exitWrapper()
     fi
   else
     echo "The backup script failed with error 11"
-      # We should also send a copy by mail @TODO
-      cat "${logFileActual}" >> "${logFile}"
+    # We should also send a copy by mail @TODO
+    cat "${logFileActual}" >> "${logFile}"
     exit "11"
   fi
 }
