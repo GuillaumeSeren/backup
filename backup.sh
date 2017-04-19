@@ -9,19 +9,19 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Add support for relative path to getValidateTo/From()
-# @TODO: Send mail on error with current log
-# @TODO: Add new mode agent to parse log and output (mail) important event.
-# @TODO: We need better test over ssh before rm/add.
-# @TODO: Add a way to get the rsync/tar status.
-# @TODO: Count the files on a given period (day/week/month/year).
-# @TODO: Improve cleaning mode filter, add param to configure it.
-# @TODO: Add getFileNameNotInPeriod of 2 timestamps.
-# @TODO: Add better log, calculate size moved / read.
-# @TODO: Add speed stat mo/s ko/s go/s in the log.
-# @TODO: Add a function to check free space before doing archive, add a log.
-# @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
 # @TODO: Move log to /var/log + package + logrotate
+# @TODO: Send mail on error with current log
+# @TODO: Add speed stat mo/s ko/s go/s in the log.
+# @TODO: Add support for relative path to getValidateTo/From()
+# @TODO: Add better log, calculate size moved / read / copy.
+# @TODO: Add a function to check free space before doing archive, add a log.
+# @TODO: Add a way to get the rsync/tar status.
+# @TODO: We need better test over ssh before rm/add.
+# @TODO: Count the files on a given period (day/week/month/year).
+# @TODO: Add getFileNameNotInPeriod of 2 timestamps.
+# @TODO: Improve cleaning mode filter, add param to configure it.
+# @TODO: Add new mode agent to parse log and output (mail) important event.
+# @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
 
 # Error Codes {{{1
 # 0  - Ok

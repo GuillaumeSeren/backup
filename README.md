@@ -35,6 +35,7 @@ of common need.
 * Auto generate a unique name for the archive (based on the time).
 * Compress as a small tarball the target (LZMA).
 * Output a clean log to track events, time and duration.
+* Add a running log to be sent to user or just kept if error.
 * Add a lock file to track already running task.
 * Clean old archive other that today.
 * Sync a remote storage (add).
@@ -85,7 +86,7 @@ $ ~/backup/backup.sh -h
 ```
 
 ## Who ?
-*Everyone should take backup seriously*,
+*Everyone should take backup _seriously_*,
 I suggest to have, at least 3 copy on different computer and places (if able to).
 
 A great read on this subject, by jwz: http://www.jwz.org/doc/backups.html
