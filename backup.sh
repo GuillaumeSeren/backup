@@ -130,7 +130,7 @@ function log() {
     globalLog="$(createLogFile "${logFile}")"
   fi
   # Do we have some early log to catch
-  if [[ -n "$globalLog" && "globalLog" != "" ]]; then
+  if [[ -n "${globalLog}" && "${globalLog}" != "" ]]; then
     echo "$dateNow $idScriptCall $globalLog" >> "$globalLog" 2>&1
     # Clear earlyLog after displaying it
     unset globalLog
@@ -405,7 +405,7 @@ function checkDependencies()
 function exitWrapper()
 {
   # Embed the needed process to do while exiting
-  if [[ -z "${$1}" && "${$1}" != '' ]]; then
+  if [[ -z "$1" && "$1" != '' ]]; then
     if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
       echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
       # We should also send a copy by mail @TODO
@@ -478,7 +478,7 @@ while getopts "$optspec" optchar; do
           exitWrapper 1
           ;;
         from)
-          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdFrom="$(getValidateFrom "$val")"
           if [[ "$cmdFrom" == "" ]]; then
             echo "The from target is invalid: $OPTARG"
@@ -487,7 +487,7 @@ while getopts "$optspec" optchar; do
           fi
           ;;
         to)
-          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdTo="$(getValidateTo "$val")"
           if [[ "$cmdTo" == "" ]]; then
             echo "The to target is invalid: $OPTARG"
@@ -496,7 +496,7 @@ while getopts "$optspec" optchar; do
           fi
           ;;
         limit)
-          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           rsyncBwLimit="$val"
           if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
             echo "Your rsync bwlimit can not be null"
@@ -506,14 +506,14 @@ while getopts "$optspec" optchar; do
           rsyncBwLimit="--bwlimit=${rsyncBwLimit}"
           ;;
         mode)
-          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdMode="$val"
           ;;
         verbose)
           cmdVerbose=1
           ;;
         email)
-          val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdMail="$val"
           ;;
         *)
