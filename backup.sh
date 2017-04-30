@@ -60,7 +60,7 @@ function usage()
 {
   cat << DOC
 
-  usage: "$0" options
+  ${0} options
 
 Backup a target in a location path.
 
@@ -85,17 +85,17 @@ OPTIONS:
       0             Is no limit (default).
       By default the value will be in KiB.
       You can specify other suffixes see rsync man page.
-  -e  --email       Specify a email to contact if error.
+  -e, --email       Specify a email to contact if error.
 
-Sample:
+Examples:
   Sync 2 directory
-  "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNC
+  ${0} -f server:/var/www/foo -t /var/save/bar/ -m SYNC
   Make a tarball of a path, save it in the location.
-  "$0" -f server:/var/www/foo -t /var/save/dump/ -m TARB
+  ${0} -f server:/var/www/foo -t /var/save/dump/ -m TARB
   Delete old tarball:
-  "$0" -f server:/var/www/foo -t /var/save/bar/ -m CLEAN
+  ${0} -f server:/var/www/foo -t /var/save/bar/ -m CLEAN
   SYNCRM 2 directory
-  "$0" -f server:/var/www/foo -t /var/save/bar/ -m SYNCRM
+  ${0} -f server:/var/www/foo -t /var/save/bar/ -m SYNCRM
 
 DOC
 }
@@ -405,21 +405,30 @@ function checkDependencies()
 function exitWrapper()
 {
   # Embed the needed process to do while exiting
-  if [[ -z "$1" && "$1" != '' ]]; then
+  if [[ -n "$1" && "$1" != '' && "$1" != 0 ]]; then
     if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
       echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
-      # We should also send a copy by mail @TODO
-      cat "${logFileActual}" >> "${logFile}"
+      if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
+        # We should also send a copy by mail @TODO
+        cat "${logFileActual}" >> "${logFile}"
+      fi
     else
       echo "The backup script failed with error ${1}"
-      # We should also send a copy by mail @TODO
-      cat "${logFileActual}" >> "${logFile}"
+      if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
+        # We should also send a copy by mail @TODO
+        cat "${logFileActual}" >> "${logFile}"
+      fi
       exit "${1}"
     fi
+  elif [[ -n "$1" && "$1" != '' && "$1" == 0 ]]; then
+    # it is a non error exit (help)
+    exit "${1}"
   else
     echo "The backup script failed with error 11"
-    # We should also send a copy by mail @TODO
-    cat "${logFileActual}" >> "${logFile}"
+    if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
+      # We should also send a copy by mail @TODO
+      cat "${logFileActual}" >> "${logFile}"
+    fi
     exit "11"
   fi
 }
@@ -433,7 +442,7 @@ while getopts "$optspec" optchar; do
   case "${optchar}" in
     h)
       usage
-      exitWrapper 1
+      exitWrapper 0
       ;;
     f)
       cmdFrom="$(getValidateFrom "$OPTARG")"
@@ -475,7 +484,7 @@ while getopts "$optspec" optchar; do
         # https://stackoverflow.com/questions/402377/using-getopts-in-bash-shell-script-to-get-long-and-short-command-line-options
         help)
           usage
-          exitWrapper 1
+          exitWrapper 0
           ;;
         from)
           val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
@@ -652,10 +661,12 @@ function main() {
     log "duration (sec): $(( timeEnd - timeStart ))"
     log "Save $cmdFrom to $cmdTo End"
   fi
+  if [[ -e "${logFileActual}" ]]; then
   # if we go here we can add local log to global
-  cat "${logFileActual}" >> "${logFile}"
-  # Then clean logFileActual
-  rm "${logFileActual}"
+    cat "${logFileActual}" >> "${logFile}"
+    # Then clean logFileActual
+    rm "${logFileActual}"
+  fi
 }
 main
 # }}}
