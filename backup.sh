@@ -43,10 +43,11 @@ dependencies='date dirname sha1sum cut rev tar rsync'
 flagGetOpts=0
 dateNow="$(date +"%Y%m%d-%H:%M:%S")"
 logPath="$(dirname "$0")"
-lockFile="$logPath/$(echo "$@" | sha1sum | cut -d ' ' -f1).lock"
+lockHash="$(echo "$@" | sha1sum | cut -d ' ' -f1)"
+lockFile="$logPath/${lockHash}.lock"
 logFile="$(echo "$0" | rev | cut -d"/" -f1 | rev)"
 # This is for the actual run
-logFileActual="$logPath/${logFile%.*}-${dateNow}.log"
+logFileActual="$logPath/${lockHash}-${logFile%.*}-${dateNow}.log"
 logFile="$logPath/${logFile%.*}.log"
 # simple timing
 timeStart="$(date +"%s")"
