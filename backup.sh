@@ -36,6 +36,7 @@
 # 9  - Some default param is missing
 # 10 - Error unknown options
 # 11 - Error in function exitWrapper
+# 12 - Error in statusCall
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
@@ -125,6 +126,8 @@ function createLogFile() {
 }
 
 # FUNCTION log() {{{1
+# $1 Message
+# $2 Verbose level
 function log() {
   # We need to check if the file is available
   if [[ ! -w "$logFile" ]]; then
@@ -434,6 +437,44 @@ function exitWrapper()
   fi
 }
 
+# FUNCTION getStatusCall() {{{1
+function getStatusCall() {
+  if [[ -n "${1}" && -n "${2}" ]]; then
+    local output="MODE ${1} ${2}"
+  else
+    echo "Bad getStatusCall() parm: ${tvOpts}"
+    exit 12
+  fi
+  echo "${output}"
+}
+
+# FUNCTION getMode() {{{1
+function getMode() {
+  # check valid mode
+  if [[   "$cmdMode" == "SYNC" ]]; then
+    cmdMode="SYNC"
+  elif [[ "$cmdMode" == "SYNCRM" ]]; then
+    cmdMode="SYNCRM"
+  elif [[ "$cmdMode" == "TARB" ]]; then
+    cmdMode="TARB"
+  elif [[ "$cmdMode" == "CLEAN" ]]; then
+    cmdMode="CLEAN"
+  else
+    echo "Bad mode: ${cmdMode}"
+    exit 13
+  fi
+  echo "${cmdMode}"
+}
+
+# FUNCTION getBwLimit() {{{1
+function getRsyncBwLimit() {
+  if [[ -n "${1}" && "${1}" != '' ]]; then
+    rsyncBwLimit="--bwlimit=${1}"
+  else
+    rsyncBwLimit="--bwlimit=0"
+  fi
+}
+
 # GETOPTS {{{1
 # Get the param of the script.
 optspec=":f:t:m:l:-:evh"
@@ -552,11 +593,15 @@ fi
 
 # FUNCTION main() {{{1
 function main() {
-  # Use the PID:
+  # Use the PID of the current shell
   idScriptCall="$$"
-  log "Save $cmdFrom to $cmdTo Start"
+  log "Save $cmdFrom to $cmdTo"
   log "Check dependencies: ${dependencies}" "VERBOSE"
   checkDependencies "$dependencies"
+  cmdMode=$(getMode "${cmdMode}")
+  rsyncBwLimit=$(getRsyncBwLimit "${rsyncBwLimit}")
+  statusCall=$(getStatusCall "${cmdMode}" "${rsyncBwLimit}")
+  log "${statusCall}"
   # Check the lock
   if [ -f "$lockFile" ]; then
     # The last call is still running
@@ -567,8 +612,9 @@ function main() {
     log "creating the lock file: $lockFile"
     touch "$lockFile"
     echo "$timeStart" > "$lockFile"
+  fi
     if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
-      log "MODE SYNC"
+      # log "MODE SYNC"
       if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
         log "OPTION TV: $rsyncBwLimit"
       else
@@ -660,8 +706,7 @@ function main() {
     timeEnd="$(date +"%s")"
     cleanLockFile
     log "duration (sec): $(( timeEnd - timeStart ))"
-    log "Save $cmdFrom to $cmdTo End"
-  fi
+    # log "Save $cmdFrom to $cmdTo End"
   if [[ -e "${logFileActual}" ]]; then
   # if we go here we can add local log to global
     cat "${logFileActual}" >> "${logFile}"
