@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Use tee to copy echo ouput and add it to log
 # @TODO: Move log to /var/log + package + logrotate
 # @TODO: Send mail on error with current log
 # @TODO: Add speed stat mo/s ko/s go/s in the log.
