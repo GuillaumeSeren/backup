@@ -460,8 +460,18 @@ function getMode() {
   elif [[ "$cmdMode" == "CLEAN" ]]; then
     cmdMode="CLEAN"
   else
-    echo "Bad mode: ${cmdMode}"
-    exit 13
+    # echo "Bad mode: ${cmdMode}"
+    # exit 13
+    #@FIXME: We should better set cmdMode a default value and use this case for error.
+    # log "MODE SYNC"
+    # log "Default mode"
+    # if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
+    #   log "OPTION TV: $rsyncBwLimit"
+    # else
+    #   rsyncBwLimit="--bwlimit=0"
+    # fi
+    # log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
+    cmdMode="SYNC"
   fi
   echo "${cmdMode}"
 }
@@ -613,100 +623,82 @@ function main() {
     touch "$lockFile"
     echo "$timeStart" > "$lockFile"
   fi
-  if [[ -n "$cmdMode" && "$cmdMode" == "SYNC" ]]; then
-    # log "MODE SYNC"
-    if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
-      log "OPTION TV: $rsyncBwLimit"
-    else
-      rsyncBwLimit="--bwlimit=0"
-    fi
-    log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
-  elif [[ -n $cmdMode && $cmdMode == "SYNCRM" ]]; then
-    log "MODE SYNCRM"
-    if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
-      log "OPTION TV: $rsyncBwLimit"
-    else
-      rsyncBwLimit="--bwlimit=0"
-    fi
-    # Calculate files that are in the cmdTo but deleted on from.
-    IFS=$'\n'
-    fileList=($(rsync -avz "$rsyncBwLimit" --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
-    unset IFS
-    log "SYNCRM Nb fichier détectés: ${#fileList[@]}"
-    sizeFileDeleted=0
-    declare -a aSyncRm
-    for (( i=0; i<"${#fileList[@]}"; i++ ))
-    do
-      if [[ "${fileList[$i]}" == "" || "${fileList[$i]}" =~ ^[[:space:]]++$ ]]; then
-        log "SYNCRM error on the file: ${fileList[$i]}"
-      else
-        # Remove the last / if any in the cmdTo name
-        targetRm="${cmdTo%/}/${fileList[$i]}"
-        log "Delete: ${targetRm}"
-        if [[ -d "${targetRm}" ]]; then
-          rmDir "${targetRm}"
+  case "{cmdMode}" in
+    'SYNC')
+      log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
+      ;;
+    'SYNCRM')
+      # Calculate files that are in the cmdTo but deleted on from.
+      IFS=$'\n'
+      fileList=($(rsync -avz "$rsyncBwLimit" --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
+      unset IFS
+      log "SYNCRM Nb fichier détectés: ${#fileList[@]}"
+      sizeFileDeleted=0
+      declare -a aSyncRm
+      for (( i=0; i<"${#fileList[@]}"; i++ ))
+      do
+        if [[ "${fileList[$i]}" == "" || "${fileList[$i]}" =~ ^[[:space:]]++$ ]]; then
+          log "SYNCRM error on the file: ${fileList[$i]}"
         else
-          sizeFileDeleted=$(( sizeFileDeleted + $(getFileSize "${targetRm}") ))
-          rmFile "${targetRm}"
+          # Remove the last / if any in the cmdTo name
+          targetRm="${cmdTo%/}/${fileList[$i]}"
+          log "Delete: ${targetRm}"
+          if [[ -d "${targetRm}" ]]; then
+            rmDir "${targetRm}"
+          else
+            sizeFileDeleted=$(( sizeFileDeleted + $(getFileSize "${targetRm}") ))
+            rmFile "${targetRm}"
+          fi
+          aSyncRm+=("${fileList[$i]}")
         fi
-        aSyncRm+=("${fileList[$i]}")
-      fi
-    done
-    log "SYNCRM list done: ${#aSyncRm[@]} deleted item(s)"
-    log "SYNCRM size freed: ${sizeFileDeleted}"
-  elif [[ -n $cmdMode && $cmdMode == "TARB" ]]; then
-    log "MODE TARBALL"
-    # Delete the last / if any
-    cmdFrom="${cmdFrom%/}"
-    pathName="$(basename "$cmdFrom")"
-    tarName="$(getUniqueName "$pathName")${tarExtension}"
-    sizeFileDeleted=0
-    log "Archive name: $tarName"
-    log "$(tar "${tarParams}" "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
-    sizeFileDeleted="$(getFileSize "${cmdTo}/${tarName}")"
-    log "TARB file size: ${sizeFileDeleted}"
-  elif [[ -n $cmdMode && $cmdMode == "CLEAN" ]]; then
-    log "MODE CLEAN"
-    pathName="$(basename "$cmdFrom")"
-    sizeFileDeleted=0
-    # List all files by name
-    IFS=$'\n'
-    fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*${tarExtension}"))
-    unset IFS
-    declare -a aFileToClean
-    for (( i=0; i<"${#fileList[@]}"; i++ ))
-    do
-      # Check file not today for the clean
-      fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")"
-      if [[ -n "$fileMatch" && "$fileMatch" != "" ]]; then
-        # There was a match
-        aFileToClean+=("${fileList[$i]}")
-      fi
-    done
-    # Cleaning loop
-    for (( i=0; i<"${#aFileToClean[@]}"; i++ ))
-    do
-      log "rm ${aFileToClean[$i]}"
-      sizeFileDeleted=$(( sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
-      rmFile "${aFileToClean[$i]}"
-    done
-    log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
-    log "CLEAN size freed: ${sizeFileDeleted}"
-  else
-    #@FIXME: We should better set cmdMode a default value and use this case for error.
-    log "MODE SYNC"
-    log "Default mode"
-    if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
-      log "OPTION TV: $rsyncBwLimit"
-    else
-      rsyncBwLimit="--bwlimit=0"
-    fi
-    log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
-  fi
+      done
+      log "SYNCRM list done: ${#aSyncRm[@]} deleted item(s)"
+      log "SYNCRM size freed: ${sizeFileDeleted}"
+      ;;
+    'TARB')
+      log "MODE TARBALL"
+      # Delete the last / if any
+      cmdFrom="${cmdFrom%/}"
+      pathName="$(basename "$cmdFrom")"
+      tarName="$(getUniqueName "$pathName")${tarExtension}"
+      sizeFileDeleted=0
+      log "Archive name: $tarName"
+      log "$(tar "${tarParams}" "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
+      sizeFileDeleted="$(getFileSize "${cmdTo}/${tarName}")"
+      log "TARB file size: ${sizeFileDeleted}"
+      ;;
+    'CLEAN')
+      log "MODE CLEAN"
+      pathName="$(basename "$cmdFrom")"
+      sizeFileDeleted=0
+      # List all files by name
+      IFS=$'\n'
+      fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*${tarExtension}"))
+      unset IFS
+      declare -a aFileToClean
+      for (( i=0; i<"${#fileList[@]}"; i++ ))
+      do
+        # Check file not today for the clean
+        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")"
+        if [[ -n "$fileMatch" && "$fileMatch" != "" ]]; then
+          # There was a match
+          aFileToClean+=("${fileList[$i]}")
+        fi
+      done
+      # Cleaning loop
+      for (( i=0; i<"${#aFileToClean[@]}"; i++ ))
+      do
+        log "rm ${aFileToClean[$i]}"
+        sizeFileDeleted=$(( sizeFileDeleted + $(getFileSize "${aFileToClean[$i]}") ))
+        rmFile "${aFileToClean[$i]}"
+      done
+      log "CLEAN done: ${#aFileToClean[@]} deleted item(s)"
+      log "CLEAN size freed: ${sizeFileDeleted}"
+      ;;
+  esac
   timeEnd="$(date +"%s")"
   cleanLockFile
   log "duration (sec): $(( timeEnd - timeStart ))"
-  # log "Save $cmdFrom to $cmdTo End"
   if [[ -e "${logFileActual}" ]]; then
     # if we go here we can add local log to global
     cat "${logFileActual}" >> "${logFile}"
