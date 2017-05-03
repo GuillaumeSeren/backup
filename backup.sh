@@ -440,12 +440,12 @@ function exitWrapper()
 
 # FUNCTION getStatusCall() {{{1
 function getStatusCall() {
-  if [[ -n "${1}" && -n "${2}" ]]; then
+  # if [[ -n "${1}" && -n "${2}" ]]; then
     local output="MODE ${1} ${2}"
-  else
-    echo "Bad getStatusCall() parm: ${tvOpts}"
-    exit 12
-  fi
+  # else
+  #   echo "Bad getStatusCall() parm: ${tvOpts}"
+  #   exit 12
+  # fi
   echo "${output}"
 }
 
@@ -480,10 +480,11 @@ function getMode() {
 # FUNCTION getBwLimit() {{{1
 function getRsyncBwLimit() {
   if [[ -n "${1}" && "${1}" != '' ]]; then
-    rsyncBwLimit="--bwlimit=${1}"
+    rsyncBwLimit="${1}"
   else
     rsyncBwLimit="--bwlimit=0"
   fi
+  echo "${rsyncBwLimit}"
 }
 
 # GETOPTS {{{1
@@ -619,14 +620,17 @@ function main() {
     log "The last call is still running" "ALERT"
     lockFileContent="$(cat "$lockFile")"
     log "Running since $(date -d @"$lockFileContent") ABORTING !!" "ALERT"
+    exitWrapper 3
   else
-    log "creating the lock file: $lockFile"
+    # Only display it if verbose is set
+    # log "creating the lock file: $lockFile"
     touch "$lockFile"
     echo "$timeStart" > "$lockFile"
   fi
-  case "{cmdMode}" in
+  case "${cmdMode}" in
     'SYNC')
       log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
+      # log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
       ;;
     'SYNCRM')
       # Calculate files that are in the cmdTo but deleted on from.
