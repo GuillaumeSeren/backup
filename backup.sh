@@ -9,13 +9,13 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Use tee to copy echo ouput and add it to log
-# @TODO: Move log to /var/log + package + logrotate
-# @TODO: Send mail on error with current log
-# @TODO: Add speed stat mo/s ko/s go/s in the log.
-# @TODO: Add support for relative path to getValidateTo/From()
-# @TODO: Add better log, calculate size moved / read / copy.
+# @TODO: Add disabled log to verbose more information
 # @TODO: Add a function to check free space before doing archive, add a log.
+# @TODO: Add better log, calculate size moved / read / copy.
+# @TODO: Use tee to copy echo ouput and add it to log
+# @TODO: Add speed stat mo/s ko/s go/s in the log.
+# @TODO: Move log to /var/log + package + logrotate
+# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Add a way to get the rsync/tar status.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Count the files on a given period (day/week/month/year).
@@ -410,29 +410,32 @@ function checkDependencies()
 function exitWrapper()
 {
   # Embed the needed process to do while exiting
-  if [[ -n "$1" && "$1" != '' && "$1" != 0 ]]; then
+  if [[ -n "$1" && "$1" != 0 ]]; then
     if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
       echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
       if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
-        # We should also send a copy by mail @TODO
         cat "${logFileActual}" >> "${logFile}"
       fi
     else
       echo "The backup script failed with error ${1}"
       if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
-        # We should also send a copy by mail @TODO
         cat "${logFileActual}" >> "${logFile}"
+      fi
+      if [[ -n "${cmdMail}" ]]; then
+        cat "${logFileActual}" | mail -s "Backup has failed: ${logFileActual}" "${cmdMail}"
       fi
       exit "${1}"
     fi
-  elif [[ -n "$1" && "$1" != '' && "$1" == 0 ]]; then
+  elif [[ -n "$1" && "$1" == 0 ]]; then
     # it is a non error exit (help)
     exit "${1}"
   else
     echo "The backup script failed with error 11"
     if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
-      # We should also send a copy by mail @TODO
       cat "${logFileActual}" >> "${logFile}"
+    fi
+    if [[ -n "${cmdMail}" ]]; then
+      cat "${logFileActual}" | mail -s "Backup has failed: ${logFileActual}" "${cmdMail}"
     fi
     exit "11"
   fi
