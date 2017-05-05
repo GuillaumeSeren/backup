@@ -25,19 +25,19 @@
 # @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
 
 # Error Codes {{{1
-# 0  - Ok
-# 1  - Error in cmd / options
-# 2  - Error log file
-# 3  - The last call is still running
-# 4  - The getFileNameByDay is called with no filename (first parm).
-# 5  - The getValidateFrom arg is not readable, check fs perm.
-# 6  - The getValidateTo arg is not readable/writeable, check fr perm.
-# 7  - The bwlimit is null.
-# 8  - Missing dependencies
-# 9  - Some default param is missing
-# 10 - Error unknown options
-# 11 - Error in function exitWrapper
-# 12 - Error in statusCall
+# 0  Ok
+# 1  Error in cmd / options
+# 2  Error log file
+# 3  The last call is still running
+# 4  The getFileNameByDay is called with no filename (first parm).
+# 5  The getValidateFrom arg is not readable, check fs perm.
+# 6  The getValidateTo arg is not readable/writeable, check fr perm.
+# 7  The bwlimit is null.
+# 8  Missing dependencies
+# 9  Some default param is missing
+# 10 Error unknown options
+# 11 Error in function exitWrapper
+# 12 Error in statusCall
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
