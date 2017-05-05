@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Add disabled log to verbose more information
 # @TODO: Add a function to check free space before doing archive, add a log.
 # @TODO: Add better log, calculate size moved / read / copy.
 # @TODO: Use tee to copy echo ouput and add it to log
@@ -25,19 +24,19 @@
 # @TODO: Add mode 2 way SYNC2W to provide 2 way sync, the newer is taken.
 
 # Error Codes {{{1
-# 0  - Ok
-# 1  - Error in cmd / options
-# 2  - Error log file
-# 3  - The last call is still running
-# 4  - The getFileNameByDay is called with no filename (first parm).
-# 5  - The getValidateFrom arg is not readable, check fs perm.
-# 6  - The getValidateTo arg is not readable/writeable, check fr perm.
-# 7  - The bwlimit is null.
-# 8  - Missing dependencies
-# 9  - Some default param is missing
-# 10 - Error unknown options
-# 11 - Error in function exitWrapper
-# 12 - Error in statusCall
+# 0  Ok
+# 1  Error in cmd / options
+# 2  Error log file
+# 3  The last call is still running
+# 4  The getFileNameByDay is called with no filename (first parm).
+# 5  The getValidateFrom arg is not readable, check fs perm.
+# 6  The getValidateTo arg is not readable/writeable, check fr perm.
+# 7  The bwlimit is null.
+# 8  Missing dependencies
+# 9  Some default param is missing
+# 10 Error unknown options
+# 11 Error in function exitWrapper
+# 12 Error in statusCall
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
@@ -163,7 +162,6 @@ function log() {
     # Do we have the alert flag
     echo "$dateNow $idScriptCall $1"
   fi
-
 }
 
 # FUNCTION getUniqueName() {{{1
@@ -198,7 +196,6 @@ function getFileNameOnDay() {
   fi
   # Let's check if the filename contain the chosen date:
   if [[ "${1}" =~ ^$dateDay-.*+$ ]]; then
-    # echo "Find result: ${1}"
     echo "${1}"
   fi
 }
@@ -222,7 +219,6 @@ function getFileNameNotOnDay() {
   fi
   # Let's check if the filename contain the chosen date:
   if [[ ! "${1}" =~ ^$dateDay-.*+$ ]]; then
-    # echo "Find result: ${1}"
     echo "${1}"
   fi
 }
@@ -241,38 +237,32 @@ function cleanLockFile() {
 function getUrlType
 {
   # Return the type of the URL.
-  #----------------------------------------------
-  # SSH   - 192.168.0.1:~/mypath/
-  # SSH   - foo@192.168.0.1:~/mypath/
-  # SSH   - ssh_alias:~/mypath/
-  # LOCAL - ~/mypath/
-  #--------------------------------------------
+  # SSH   -> 192.168.0.1:~/mypath/
+  # SSH   -> foo@192.168.0.1:~/mypath/
+  # SSH   -> ssh_alias:~/mypath/
+  # LOCAL -> ~/mypath/
   # Regex :
   local sRegPathLocal='^(/)?([a-zA-Z]+.(/)?)+$'
   local sRegPathSshIp='^([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
   local sRegPathSshIpUser='^([a-zA-Z0-9]+)@([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
   local sRegPathSshAlias='^(.+):(~/.+)?(/.+)?$'
-  #--------------------------------------------
   # Get param
   if [[ -n "$1" && "$1" != "" ]]; then
     local url=$1
   fi
   local urlType=""
-  if [[ $url =~ $sRegPathSshIp ||
-    $url =~ $sRegPathSshIpUser ||
-    $url =~ $sRegPathSshAlias
-  ]]; then
-  # It's SSH
-  urlType="ssh"
-elif [[ $url =~ $sRegPathLocal ]]; then
-  # It's local
-  urlType="local"
-else
-  # Sinon c'est une url inconnu.
-  urlType="unknown"
-  # echo "Error URL : $url"
-  # exit $flag
-fi
+  if [[   $url =~ $sRegPathSshIp ||
+          $url =~ $sRegPathSshIpUser ||
+          $url =~ $sRegPathSshAlias ]]; then
+    # It's SSH
+    urlType="ssh"
+  elif [[ $url =~ $sRegPathLocal ]]; then
+    # It's local
+    urlType="local"
+  else
+    # Sinon c'est une url inconnu.
+    urlType="unknown"
+  fi
 echo $urlType
 }
 
@@ -443,17 +433,18 @@ function exitWrapper()
 
 # FUNCTION getStatusCall() {{{1
 function getStatusCall() {
-  # if [[ -n "${1}" && -n "${2}" ]]; then
+  if [[ -n "${1}" && -n "${2}" ]]; then
     local output="MODE ${1} ${2}"
-  # else
-  #   echo "Bad getStatusCall() parm: ${tvOpts}"
-  #   exit 12
-  # fi
+  else
+    echo "Bad getStatusCall() parm1: ${1} param2: ${2}"
+    exit 12
+  fi
   echo "${output}"
 }
 
 # FUNCTION getMode() {{{1
 function getMode() {
+  local cmdMode=''
   # check valid mode
   if [[   "$cmdMode" == "SYNC" ]]; then
     cmdMode="SYNC"
@@ -464,17 +455,7 @@ function getMode() {
   elif [[ "$cmdMode" == "CLEAN" ]]; then
     cmdMode="CLEAN"
   else
-    # echo "Bad mode: ${cmdMode}"
-    # exit 13
-    #@FIXME: We should better set cmdMode a default value and use this case for error.
-    # log "MODE SYNC"
-    # log "Default mode"
-    # if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
-    #   log "OPTION TV: $rsyncBwLimit"
-    # else
-    #   rsyncBwLimit="--bwlimit=0"
-    # fi
-    # log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
+    # Default mode
     cmdMode="SYNC"
   fi
   echo "${cmdMode}"
@@ -482,6 +463,7 @@ function getMode() {
 
 # FUNCTION getBwLimit() {{{1
 function getRsyncBwLimit() {
+  local rsyncBwLimit=''
   if [[ -n "${1}" && "${1}" != '' ]]; then
     rsyncBwLimit="${1}"
   else
@@ -626,14 +608,13 @@ function main() {
     exitWrapper 3
   else
     # Only display it if verbose is set
-    # log "creating the lock file: $lockFile"
+    log "creating the lock file: $lockFile" "VERBOSE"
     touch "$lockFile"
     echo "$timeStart" > "$lockFile"
   fi
   case "${cmdMode}" in
     'SYNC')
       log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
-      # log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
       ;;
     'SYNCRM')
       # Calculate files that are in the cmdTo but deleted on from.
