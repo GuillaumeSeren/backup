@@ -464,17 +464,7 @@ function getMode() {
   elif [[ "$cmdMode" == "CLEAN" ]]; then
     cmdMode="CLEAN"
   else
-    # echo "Bad mode: ${cmdMode}"
-    # exit 13
-    #@FIXME: We should better set cmdMode a default value and use this case for error.
-    # log "MODE SYNC"
-    # log "Default mode"
-    # if [[ -n "$rsyncBwLimit" && "$rsyncBwLimit" != '' ]]; then
-    #   log "OPTION TV: $rsyncBwLimit"
-    # else
-    #   rsyncBwLimit="--bwlimit=0"
-    # fi
-    # log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
+    # Default mode
     cmdMode="SYNC"
   fi
   echo "${cmdMode}"
