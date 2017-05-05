@@ -626,14 +626,13 @@ function main() {
     exitWrapper 3
   else
     # Only display it if verbose is set
-    # log "creating the lock file: $lockFile"
+    log "creating the lock file: $lockFile" "VERBOSE"
     touch "$lockFile"
     echo "$timeStart" > "$lockFile"
   fi
   case "${cmdMode}" in
     'SYNC')
       log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
-      # log "$(rsync -avz "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
       ;;
     'SYNCRM')
       # Calculate files that are in the cmdTo but deleted on from.
