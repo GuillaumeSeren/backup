@@ -162,7 +162,6 @@ function log() {
     # Do we have the alert flag
     echo "$dateNow $idScriptCall $1"
   fi
-
 }
 
 # FUNCTION getUniqueName() {{{1
@@ -197,7 +196,6 @@ function getFileNameOnDay() {
   fi
   # Let's check if the filename contain the chosen date:
   if [[ "${1}" =~ ^$dateDay-.*+$ ]]; then
-    # echo "Find result: ${1}"
     echo "${1}"
   fi
 }
@@ -221,7 +219,6 @@ function getFileNameNotOnDay() {
   fi
   # Let's check if the filename contain the chosen date:
   if [[ ! "${1}" =~ ^$dateDay-.*+$ ]]; then
-    # echo "Find result: ${1}"
     echo "${1}"
   fi
 }
@@ -240,38 +237,32 @@ function cleanLockFile() {
 function getUrlType
 {
   # Return the type of the URL.
-  #----------------------------------------------
-  # SSH   - 192.168.0.1:~/mypath/
-  # SSH   - foo@192.168.0.1:~/mypath/
-  # SSH   - ssh_alias:~/mypath/
-  # LOCAL - ~/mypath/
-  #--------------------------------------------
+  # SSH   -> 192.168.0.1:~/mypath/
+  # SSH   -> foo@192.168.0.1:~/mypath/
+  # SSH   -> ssh_alias:~/mypath/
+  # LOCAL -> ~/mypath/
   # Regex :
   local sRegPathLocal='^(/)?([a-zA-Z]+.(/)?)+$'
   local sRegPathSshIp='^([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
   local sRegPathSshIpUser='^([a-zA-Z0-9]+)@([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
   local sRegPathSshAlias='^(.+):(~/.+)?(/.+)?$'
-  #--------------------------------------------
   # Get param
   if [[ -n "$1" && "$1" != "" ]]; then
     local url=$1
   fi
   local urlType=""
-  if [[ $url =~ $sRegPathSshIp ||
-    $url =~ $sRegPathSshIpUser ||
-    $url =~ $sRegPathSshAlias
-  ]]; then
-  # It's SSH
-  urlType="ssh"
-elif [[ $url =~ $sRegPathLocal ]]; then
-  # It's local
-  urlType="local"
-else
-  # Sinon c'est une url inconnu.
-  urlType="unknown"
-  # echo "Error URL : $url"
-  # exit $flag
-fi
+  if [[   $url =~ $sRegPathSshIp ||
+          $url =~ $sRegPathSshIpUser ||
+          $url =~ $sRegPathSshAlias ]]; then
+    # It's SSH
+    urlType="ssh"
+  elif [[ $url =~ $sRegPathLocal ]]; then
+    # It's local
+    urlType="local"
+  else
+    # Sinon c'est une url inconnu.
+    urlType="unknown"
+  fi
 echo $urlType
 }
 
@@ -442,17 +433,18 @@ function exitWrapper()
 
 # FUNCTION getStatusCall() {{{1
 function getStatusCall() {
-  # if [[ -n "${1}" && -n "${2}" ]]; then
+  if [[ -n "${1}" && -n "${2}" ]]; then
     local output="MODE ${1} ${2}"
-  # else
-  #   echo "Bad getStatusCall() parm: ${tvOpts}"
-  #   exit 12
-  # fi
+  else
+    echo "Bad getStatusCall() parm1: ${1} param2: ${2}"
+    exit 12
+  fi
   echo "${output}"
 }
 
 # FUNCTION getMode() {{{1
 function getMode() {
+  local cmdMode=''
   # check valid mode
   if [[   "$cmdMode" == "SYNC" ]]; then
     cmdMode="SYNC"
@@ -471,6 +463,7 @@ function getMode() {
 
 # FUNCTION getBwLimit() {{{1
 function getRsyncBwLimit() {
+  local rsyncBwLimit=''
   if [[ -n "${1}" && "${1}" != '' ]]; then
     rsyncBwLimit="${1}"
   else
