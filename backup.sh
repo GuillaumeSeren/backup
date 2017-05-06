@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Refactor main to *only* call functions (and not process).
 # @TODO: Add a function to check free space before doing archive, add a log.
 # @TODO: Add better log, calculate size moved / read / copy.
 # @TODO: Use tee to copy echo ouput and add it to log
