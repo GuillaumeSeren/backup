@@ -106,7 +106,7 @@ DOC
 # FUNCTION createlogFile() {{{1
 function createLogFile() {
   local logFileLocal=''
-  if [[ -n "$1" && "$1" != '' ]]; then
+  if [[ -n "$1" ]]; then
     logFileLocal="$1"
   else
     # If no parm take default log file
@@ -128,14 +128,14 @@ function createLogFile() {
 
 # FUNCTION log() {{{1
 # $1 Message
-# $2 Verbose level
+# $2 Verbose level (VERBOSE, ALERT)
 function log() {
   # We need to check if the file is available
   if [[ ! -w "$logFile" ]]; then
     globalLog="$(createLogFile "${logFile}")"
   fi
   # Do we have some early log to catch
-  if [[ -n "${globalLog}" && "${globalLog}" != "" ]]; then
+  if [[ -n "${globalLog}" ]]; then
     echo "$dateNow $idScriptCall $globalLog" >> "$globalLog" 2>&1
     # Clear earlyLog after displaying it
     unset globalLog
@@ -144,21 +144,21 @@ function log() {
     earlyLog="$(createLogFile "${logFileActual}")"
   fi
   # Do we have some early log to catch
-  if [[ -n "$earlyLog" && "$earlyLog" != "" ]]; then
+  if [[ -n "$earlyLog" ]]; then
     echo "$dateNow $idScriptCall $earlyLog" >> "$logFile" 2>&1
     # Clear earlyLog after displaying it
     unset earlyLog
   fi
   # test if it is writeable
   # Export the create / open / check file outside
-  if [[ -n "$1" && "$1" != "" && -z "$2" ]]; then
+  if [[ -n "$1" && -z "$2" ]]; then
     echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
-  elif [[ -n "$1" && "$1" != "" && -n "$2" && "$2" == "VERBOSE" ]]; then
+  elif [[ -n "$1" && -n "$2" && "$2" == "VERBOSE" ]]; then
     # This is verbose stuff not critical for production
     if [[ -n "$cmdVerbose" && "$cmdVerbose" == 1 ]]; then
       echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
     fi
-  elif [[ -n "$1" && "$1" != "" && -n "$2" && "$2" == "ALERT" ]]; then
+  elif [[ -n "$1" && -n "$2" && "$2" == "ALERT" ]]; then
     echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
     # Do we have the alert flag
     echo "$dateNow $idScriptCall $1"
@@ -168,7 +168,7 @@ function log() {
 # FUNCTION getUniqueName() {{{1
 function getUniqueName() {
   dateNow="$(date +"%Y%m%d-%H:%M:%S")"
-  if [[ -n "$1" && "$1" != "" ]]; then
+  if [[ -n "$1" ]]; then
     # The name is derivative from the target pathname
     # but you can give other things
     uniqueName="$1"
@@ -182,13 +182,13 @@ function getUniqueName() {
 # Return the filename if the date pattern is on a given day (default today).
 function getFileNameOnDay() {
   # Check the filename
-  if [[ -z "$1" && "$1" == "" ]]; then
+  if [[ -z "$1" ]]; then
     echo "Error: You can not call the getFileNameByDay without filename"
     cleanLockFile
     exitWrapper 4
   fi
   # Check the date (day)
-  if [[ -n $2 && $2 != "" ]]; then
+  if [[ -n $2 ]]; then
     #@TODO: Add a regex to validate the format
     dateDay="$2"
   else
@@ -205,13 +205,13 @@ function getFileNameOnDay() {
 # Return the filename if the date pattern is not on a given day (default today).
 function getFileNameNotOnDay() {
   # Check the filename
-  if [[ -z "$1" && "$1" == "" ]]; then
+  if [[ -z "$1" ]]; then
     echo "Error: You can not call the getFileNameNotOnDay without filename"
     cleanLockFile
     exitWrapper 4
   fi
   # Check the date (day)
-  if [[ -n "$2" && "$2" != "" ]]; then
+  if [[ -n "$2" ]]; then
     #@TODO: Add a regex to validate the format
     dateDay="$2"
   else
@@ -228,7 +228,7 @@ function getFileNameNotOnDay() {
 # clean lock file.
 function cleanLockFile() {
   # test if lock file has well been made
-  if [[ -n "$lockFile" && "$lockFile" != "" ]]; then
+  if [[ -n "$lockFile" ]]; then
     log "cleaning the lock file: $lockFile" "VERBOSE"
     rmFile "$lockFile"
   fi
@@ -248,7 +248,7 @@ function getUrlType
   local sRegPathSshIpUser='^([a-zA-Z0-9]+)@([0-9]{1,3}\.){3}[0-9]{1,3}:(~/.+)?(/.+)?$'
   local sRegPathSshAlias='^(.+):(~/.+)?(/.+)?$'
   # Get param
-  if [[ -n "$1" && "$1" != "" ]]; then
+  if [[ -n "$1" ]]; then
     local url=$1
   fi
   local urlType=""
@@ -272,7 +272,7 @@ function getValidateFrom() {
   local from=""
   local fromReturn=""
   # validate the target
-  if [[ -n "$1" && "$1" != "" ]]; then
+  if [[ -n "$1" ]]; then
     from="$1"
   else
     # Without arg we take the default if set
@@ -302,7 +302,7 @@ function getValidateTo() {
   local to=""
   local toReturn=""
   # validate the target
-  if [[ -n "$1" && "$1" != "" ]]; then
+  if [[ -n "$1" ]]; then
     to="$1"
   else
     # Without arg we take the default if set
@@ -332,7 +332,7 @@ function getFileSize() {
   # Default size
   local returnSize="0"
   # get the file size
-  if [[ -n "${1}" && "${1}" != "" ]]; then
+  if [[ -n "${1}" ]]; then
     returnSize=$(du -b "${1}" | cut -f1)
   fi
   echo "${returnSize}"
@@ -341,7 +341,7 @@ function getFileSize() {
 # FUNCTION rmFile() {{{1
 function rmFile() {
   # Before deleting the file we check that exist and type and perm
-  if [[ -n "${1}" && "${1}" != "" ]]; then
+  if [[ -n "${1}" ]]; then
     if [[ ! -e "${1}" ]]; then
       # if file not exist
       log "File ${1} not exist"
@@ -360,7 +360,7 @@ function rmFile() {
 # FUNCTION rmDir() {{{1
 function rmDir() {
   # Before deleting the directory we check that exist and type and perm
-  if [[ -n "${1}" && "${1}" != "" ]]; then
+  if [[ -n "${1}" ]]; then
     if [[ ! -e "${1}" ]]; then
       # if file not exist
       log "Directory ${1} not exist"
@@ -402,7 +402,7 @@ function exitWrapper()
 {
   # Embed the needed process to do while exiting
   if [[ -n "$1" && "$1" != 0 ]]; then
-    if [[ -z "${cmdMail}" && "${cmdMail}" != '' ]]; then
+    if [[ -z "${cmdMail}" ]]; then
       echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
       if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
         cat "${logFileActual}" >> "${logFile}"
@@ -465,7 +465,7 @@ function getMode() {
 # FUNCTION getBwLimit() {{{1
 function getRsyncBwLimit() {
   local rsyncBwLimit=''
-  if [[ -n "${1}" && "${1}" != '' ]]; then
+  if [[ -n "${1}" ]]; then
     rsyncBwLimit="${1}"
   else
     rsyncBwLimit="--bwlimit=0"
@@ -502,7 +502,7 @@ while getopts "$optspec" optchar; do
       ;;
     l)
       rsyncBwLimit="$OPTARG"
-      if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
+      if [[ -z "$rsyncBwLimit" ]]; then
         echo "Your rsync bwlimit can not be null"
         usage
         exitWrapper 7
@@ -529,7 +529,7 @@ while getopts "$optspec" optchar; do
         from)
           val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdFrom="$(getValidateFrom "$val")"
-          if [[ "$cmdFrom" == "" ]]; then
+          if [[ -z "$cmdFrom" ]]; then
             echo "The from target is invalid: $OPTARG"
             echo "Please check reading permissions of your file system"
             exitWrapper 5
@@ -538,7 +538,7 @@ while getopts "$optspec" optchar; do
         to)
           val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdTo="$(getValidateTo "$val")"
-          if [[ "$cmdTo" == "" ]]; then
+          if [[ -z "$cmdTo" ]]; then
             echo "The to target is invalid: $OPTARG"
             echo "Please check reading permissions of your file system"
             exitWrapper 6
@@ -547,7 +547,7 @@ while getopts "$optspec" optchar; do
         limit)
           val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           rsyncBwLimit="$val"
-          if [[ -z "$rsyncBwLimit" && "$rsyncBwLimit" == '' ]]; then
+          if [[ -z "$rsyncBwLimit" ]]; then
             echo "Your rsync bwlimit can not be null"
             usage
             exitWrapper 7
@@ -602,7 +602,6 @@ function main() {
   log "${statusCall}"
   # Check the lock
   if [ -f "$lockFile" ]; then
-    # The last call is still running
     log "The last call is still running" "ALERT"
     lockFileContent="$(cat "$lockFile")"
     log "Running since $(date -d @"$lockFileContent") ABORTING !!" "ALERT"
@@ -670,7 +669,7 @@ function main() {
       do
         # Check file not today for the clean
         fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")"
-        if [[ -n "$fileMatch" && "$fileMatch" != "" ]]; then
+        if [[ -n "$fileMatch" ]]; then
           # There was a match
           aFileToClean+=("${fileList[$i]}")
         fi
