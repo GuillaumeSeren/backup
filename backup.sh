@@ -9,9 +9,10 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @FIXME: Check mail to be called *only* if args given
 # @TODO: Refactor main to *only* call functions (and not process).
-# @TODO: Add a function to check free space before doing archive, add a log.
-# @TODO: Add better log, calculate size moved / read / copy.
+# @TODO: Function to check used space before doing archive, log size.
+# @TODO: Better log, calculate size moved / read / copy.
 # @TODO: Use tee to copy echo ouput and add it to log
 # @TODO: Add speed stat mo/s ko/s go/s in the log.
 # @TODO: Move log to /var/log + package + logrotate
