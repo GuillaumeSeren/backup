@@ -9,9 +9,10 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @FIXME: Check mail to be called *only* if args given
 # @TODO: Refactor main to *only* call functions (and not process).
-# @TODO: Add a function to check free space before doing archive, add a log.
-# @TODO: Add better log, calculate size moved / read / copy.
+# @TODO: Function to check used space before doing archive, log size.
+# @TODO: Better log, calculate size moved / read / copy.
 # @TODO: Use tee to copy echo ouput and add it to log
 # @TODO: Add speed stat mo/s ko/s go/s in the log.
 # @TODO: Move log to /var/log + package + logrotate
@@ -38,6 +39,7 @@
 # 10 Error unknown options
 # 11 Error in function exitWrapper
 # 12 Error in statusCall
+# 13 Disk avail is not enought for the sizeMoved by rsync
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
@@ -167,7 +169,7 @@ function log() {
 
 # FUNCTION getUniqueName() {{{1
 function getUniqueName() {
-  dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+  local dateNow="$(date +"%Y%m%d-%H:%M:%S")"
   if [[ -n "$1" ]]; then
     # The name is derivative from the target pathname
     # but you can give other things
@@ -614,6 +616,14 @@ function main() {
   fi
   case "${cmdMode}" in
     'SYNC')
+      # To check if available disk is > than needed by copy
+      sizeMoved=$(rsync -a --stats --dry-run a/ b/ | grep -i 'Total transferred file size: ' | cut -d':' -f2 | cut -d' ' -f2)
+      sizeMoved=${sizeMoved//,/}
+      diskAvail=$(\df --output=avail -B1 b/ | grep -v 'Avail')
+      if [[ $diskAvail -lt $sizeMoved ]]; then
+        log "Disk space avail ($diskAvail) is not enought for ($sizeMoved) !!" "ALERT"
+        exitWrapper 13
+      fi
       log "$(rsync -az "$rsyncBwLimit" "$cmdFrom" "$cmdTo")"
       ;;
     'SYNCRM')
