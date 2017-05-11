@@ -404,21 +404,15 @@ function exitWrapper()
 {
   # Embed the needed process to do while exiting
   if [[ -n "$1" && "$1" != 0 ]]; then
-    if [[ -z "${cmdMail}" ]]; then
-      echo "The backup script failed with error ${1}" | mail -s "backup fail" "${cmdMail}"
-      if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
-        cat "${logFileActual}" >> "${logFile}"
-      fi
+    if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
+      cat "${logFileActual}" >> "${logFile}"
+    fi
+    if [[ -n "${cmdMail}" ]]; then
+      cat "${logFileActual}" | mail -s "Backup has failed: ${logFileActual}" "${cmdMail}"
     else
       echo "The backup script failed with error ${1}"
-      if [[ -e "${logFileActual}" && -e "${logFile}" ]]; then
-        cat "${logFileActual}" >> "${logFile}"
-      fi
-      if [[ -n "${cmdMail}" ]]; then
-        cat "${logFileActual}" | mail -s "Backup has failed: ${logFileActual}" "${cmdMail}"
-      fi
-      exit "${1}"
     fi
+    exit "${1}"
   elif [[ -n "$1" && "$1" == 0 ]]; then
     # it is a non error exit (help)
     exit "${1}"
@@ -516,6 +510,7 @@ while getopts "$optspec" optchar; do
       ;;
     e)
       cmdMail="$OPTARG"
+      checkDependencies "mail"
       ;;
     v)
       cmdVerbose=1
@@ -566,6 +561,7 @@ while getopts "$optspec" optchar; do
         email)
           val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
           cmdMail="$val"
+          checkDependencies "mail"
           ;;
         *)
           echo "Unknown long option --${OPTARG}" >&2
