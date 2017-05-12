@@ -37,6 +37,7 @@ of common need.
 * Output a clean log to track events, time and duration.
 * Add a running log to be sent to user or just kept if error.
 * Add a lock file to track already running task.
+* Check if free space is enough before SYNC.
 * Clean old archive other that today.
 * Sync a remote storage (add).
 * Control the date for syncrm (delete).
