@@ -9,7 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @FIXME: Check mail to be called *only* if args given
 # @TODO: Refactor main to *only* call functions (and not process).
 # @TODO: Function to check used space before doing archive, log size.
 # @TODO: Better log, calculate size moved / read / copy.
@@ -613,9 +612,9 @@ function main() {
   case "${cmdMode}" in
     'SYNC')
       # To check if available disk is > than needed by copy
-      sizeMoved=$(rsync -a --stats --dry-run a/ b/ | grep -i 'Total transferred file size: ' | cut -d':' -f2 | cut -d' ' -f2)
+      sizeMoved=$(rsync -a --stats --dry-run "$rsyncBwLimit" "$cmdFrom" "$cmdTo" | grep -i 'Total transferred file size: ' | cut -d':' -f2 | cut -d' ' -f2)
       sizeMoved=${sizeMoved//,/}
-      diskAvail=$(\df --output=avail -B1 b/ | grep -v 'Avail')
+      diskAvail=$(\df --output=avail -B1 "$cmdTo" | grep -v 'Avail')
       if [[ $diskAvail -lt $sizeMoved ]]; then
         log "Disk space avail ($diskAvail) is not enought for ($sizeMoved) !!" "ALERT"
         exitWrapper 13
