@@ -113,7 +113,6 @@ function createLogFile() {
     # If no parm take default log file
     logFileLocal="$logFile"
   fi
-
   # Touch the file
   if [[ ! -f "$logFileLocal" ]]; then
     earlyLog="Creation log file: $logFileLocal"
@@ -131,44 +130,47 @@ function createLogFile() {
 # $1 Message
 # $2 Verbose level (VERBOSE, ALERT)
 function log() {
+  local globalLog=''
+  local earlyLog=''
   # We need to check if the file is available
   if [[ ! -w "$logFile" ]]; then
     globalLog="$(createLogFile "${logFile}")"
   fi
   # Do we have some early log to catch
   if [[ -n "${globalLog}" ]]; then
-    echo "$dateNow $idScriptCall $globalLog" >> "$globalLog" 2>&1
+    echo "${dateNow} ${idScriptCall} ${globalLog}" >> "${globalLog}" 2>&1
     # Clear earlyLog after displaying it
     unset globalLog
   fi
-  if [[ ! -w "$logFileActual" ]]; then
+  if [[ ! -w "${logFileActual}" ]]; then
     earlyLog="$(createLogFile "${logFileActual}")"
   fi
   # Do we have some early log to catch
   if [[ -n "$earlyLog" ]]; then
-    echo "$dateNow $idScriptCall $earlyLog" >> "$logFile" 2>&1
+    echo "${dateNow} ${idScriptCall} ${earlyLog}" >> "${logFile}" 2>&1
     # Clear earlyLog after displaying it
     unset earlyLog
   fi
-  # test if it is writeable
-  # Export the create / open / check file outside
+  # Ouput message + verbose level if set
   if [[ -n "$1" && -z "$2" ]]; then
-    echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
+    echo "${dateNow} ${idScriptCall} $1" >> "${logFileActual}" 2>&1
   elif [[ -n "$1" && -n "$2" && "$2" == "VERBOSE" ]]; then
     # This is verbose stuff not critical for production
-    if [[ -n "$cmdVerbose" && "$cmdVerbose" == 1 ]]; then
-      echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
+    if [[ -n "${cmdVerbose}" && "${cmdVerbose}" == 1 ]]; then
+      echo "${dateNow} ${idScriptCall} $1" >> "${logFileActual}" 2>&1
     fi
   elif [[ -n "$1" && -n "$2" && "$2" == "ALERT" ]]; then
-    echo "$dateNow $idScriptCall $1" >> "$logFileActual" 2>&1
+    echo "${dateNow} ${idScriptCall} $1" >> "${logFileActual}" 2>&1
     # Do we have the alert flag
-    echo "$dateNow $idScriptCall $1"
+    echo "${dateNow} ${idScriptCall} $1"
   fi
 }
 
 # FUNCTION getUniqueName() {{{1
 function getUniqueName() {
-  local dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+  local dateNow=''
+  dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+  local uniqueName=''
   if [[ -n "$1" ]]; then
     # The name is derivative from the target pathname
     # but you can give other things
@@ -182,6 +184,7 @@ function getUniqueName() {
 # FUNCTION getFileNameOnDay() {{{1
 # Return the filename if the date pattern is on a given day (default today).
 function getFileNameOnDay() {
+  local dateDay=''
   # Check the filename
   if [[ -z "$1" ]]; then
     echo "Error: You can not call the getFileNameByDay without filename"
@@ -205,6 +208,7 @@ function getFileNameOnDay() {
 # FUNCTION getFileNotOnDay() {{{1
 # Return the filename if the date pattern is not on a given day (default today).
 function getFileNameNotOnDay() {
+  local dateDay=''
   # Check the filename
   if [[ -z "$1" ]]; then
     echo "Error: You can not call the getFileNameNotOnDay without filename"
@@ -381,7 +385,7 @@ function rmDir() {
 # Test if needed dependencies are available.
 function checkDependencies()
 {
-  deps_ok='YES'
+  local deps_ok=''
   for dep in $1
   do
     if  ! which "$dep" &>/dev/null;  then
@@ -429,8 +433,9 @@ function exitWrapper()
 
 # FUNCTION getStatusCall() {{{1
 function getStatusCall() {
+  local output=''
   if [[ -n "${1}" && -n "${2}" ]]; then
-    local output="MODE ${1} ${2}"
+    output="MODE ${1} ${2}"
   else
     echo "Bad getStatusCall() parm1: ${1} param2: ${2}"
     exit 12
@@ -588,18 +593,23 @@ fi
 
 # FUNCTION main() {{{1
 function main() {
+  local idScriptCall=''
   # Use the PID of the current shell
   idScriptCall="$$"
   log "Save $cmdFrom to $cmdTo"
   log "Check dependencies: ${dependencies}" "VERBOSE"
   checkDependencies "$dependencies"
+  local cmdMode=''
   cmdMode=$(getMode "${cmdMode}")
+  local rsyncBwLimit=''
   rsyncBwLimit=$(getRsyncBwLimit "${rsyncBwLimit}")
+  locl statusCall=''
   statusCall=$(getStatusCall "${cmdMode}" "${rsyncBwLimit}")
   log "${statusCall}"
-  # Check the lock
+  # Check the lockfile (defined in default var)
   if [ -f "$lockFile" ]; then
     log "The last call is still running" "ALERT"
+    local lockFileContent=''
     lockFileContent="$(cat "$lockFile")"
     log "Running since $(date -d @"$lockFileContent") ABORTING !!" "ALERT"
     exitWrapper 3
@@ -612,8 +622,10 @@ function main() {
   case "${cmdMode}" in
     'SYNC')
       # To check if available disk is > than needed by copy
+      local sizeMoved=''
       sizeMoved=$(rsync -a --stats --dry-run "$rsyncBwLimit" "$cmdFrom" "$cmdTo" | grep -i 'Total transferred file size: ' | cut -d':' -f2 | cut -d' ' -f2)
       sizeMoved=${sizeMoved//,/}
+      local diskAvail=''
       diskAvail=$(\df --output=avail -B1 "$cmdTo" | grep -v 'Avail')
       if [[ $diskAvail -lt $sizeMoved ]]; then
         log "Disk space avail ($diskAvail) is not enought for ($sizeMoved) !!" "ALERT"
