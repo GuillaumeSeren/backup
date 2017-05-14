@@ -601,9 +601,9 @@ function main() {
   checkDependencies "$dependencies"
   local cmdMode=''
   cmdMode=$(getMode "${cmdMode}")
-  local rsyncBwLimit=''
+  # local rsyncBwLimit=''
   rsyncBwLimit=$(getRsyncBwLimit "${rsyncBwLimit}")
-  locl statusCall=''
+  local statusCall=''
   statusCall=$(getStatusCall "${cmdMode}" "${rsyncBwLimit}")
   log "${statusCall}"
   # Check the lockfile (defined in default var)
