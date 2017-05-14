@@ -9,6 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Add version of the script in the log.
 # @TODO: Refactor main to *only* call functions (and not process).
 # @TODO: Function to check used space before doing archive, log size.
 # @TODO: Better log, calculate size moved / read / copy.
