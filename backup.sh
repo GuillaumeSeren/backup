@@ -208,7 +208,7 @@ function getFileNameOnDay() {
 # FUNCTION getFileNotOnDay() {{{1
 # Return the filename if the date pattern is not on a given day (default today).
 function getFileNameNotOnDay() {
-  local dateDay=''
+  # local dateDay=''
   # Check the filename
   if [[ -z "$1" ]]; then
     echo "Error: You can not call the getFileNameNotOnDay without filename"
@@ -445,7 +445,7 @@ function getStatusCall() {
 
 # FUNCTION getMode() {{{1
 function getMode() {
-  local cmdMode=''
+  # local cmdMode=''
   # check valid mode
   if [[   "$cmdMode" == "SYNC" ]]; then
     cmdMode="SYNC"
@@ -599,7 +599,7 @@ function main() {
   log "Save $cmdFrom to $cmdTo"
   log "Check dependencies: ${dependencies}" "VERBOSE"
   checkDependencies "$dependencies"
-  local cmdMode=''
+  # local cmdMode=''
   cmdMode=$(getMode "${cmdMode}")
   # local rsyncBwLimit=''
   rsyncBwLimit=$(getRsyncBwLimit "${rsyncBwLimit}")
@@ -637,6 +637,7 @@ function main() {
       # Calculate files that are in the cmdTo but deleted on from.
       IFS=$'\n'
       fileList=($(rsync -avz "$rsyncBwLimit" --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
+      # fileList=($(rsync -avz --delete --dry-run "$cmdFrom" "$cmdTo" | grep 'delet' | sed s/'deleting '//))
       unset IFS
       log "SYNCRM Nb fichier détectés: ${#fileList[@]}"
       sizeFileDeleted=0
