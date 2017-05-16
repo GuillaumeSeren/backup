@@ -229,6 +229,28 @@ function getFileNameNotOnDay() {
   fi
 }
 
+# # FUNCTION getFileTypeNotInPeriod() {{{1
+# function getFileTypeNotInPeriod() {
+#   local filename
+#   if [[ -z "$1" ]]; then
+#     echo "Error: You can not call the getFileTypeNotInPeriod without filename"
+#     cleanLockFile
+#     exitWrapper 5
+#   else
+#     filename="$1"
+#   fi
+#   if [[ -z "$2" || -z "$3" ]]; then
+#     echo "Error: You can not call the getFileTypeNotInPeriod without dates"
+#     cleanLockFile
+#     exitWrapper 6
+#   else
+#     dateFrom="$2"
+#     dateTo="$3"
+#   fi
+#   # date -d "1970-01-01T00:00:00Z" "+%s"
+#   # We need to use clean ISO 8601 in backup names
+# }
+
 # FUNCTION cleanLockFile() {{{1
 # clean lock file.
 function cleanLockFile() {
