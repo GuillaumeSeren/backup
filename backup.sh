@@ -40,12 +40,14 @@
 # 11 Error in function exitWrapper
 # 12 Error in statusCall
 # 13 Disk avail is not enought for the sizeMoved by rsync
+# 14 The getFileTypeNotInPeriod filename is missing
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
 flagGetOpts=0
-dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+# dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+dateNow="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 logPath="$(dirname "$0")"
 lockHash="$(echo "$@" | sha1sum | cut -d ' ' -f1)"
 lockFile="$logPath/${lockHash}.lock"
@@ -54,7 +56,9 @@ logFile="$(echo "$0" | rev | cut -d"/" -f1 | rev)"
 logFileActual="$logPath/${lockHash}-${logFile%.*}-${dateNow}.log"
 logFile="$logPath/${logFile%.*}.log"
 # simple timing
-timeStart="$(date +"%s")"
+# Convert dateNow to %s timestamp
+timeStart="$(date -d "$dateNow" "+%s")"
+
 # TAR archive infos
 tarParams="-Jcf"
 tarExtension=".tar.xz"
@@ -169,14 +173,11 @@ function log() {
 
 # FUNCTION getUniqueName() {{{1
 function getUniqueName() {
-  local dateNow=''
-  dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+  # dateNow is already defined at the beginning
   local uniqueName=''
   if [[ -n "$1" ]]; then
     # The name is derivative from the target pathname
     # but you can give other things
-    uniqueName="$1"
-  else
     uniqueName="$1"
   fi
   echo "${uniqueName}_${dateNow}"
@@ -197,8 +198,7 @@ function getFileNameOnDay() {
     #@TODO: Add a regex to validate the format
     dateDay="$2"
   else
-    # Take today by default
-    dateDay="$(date +"%Y%m%d")"
+    dateDay="$(date -d "$dateNow" "+%Y-%m-%d")"
   fi
   # Let's check if the filename contain the chosen date:
   if [[ "${1}" =~ ^$dateDay-.*+$ ]]; then
@@ -221,8 +221,7 @@ function getFileNameNotOnDay() {
     #@TODO: Add a regex to validate the format
     dateDay="$2"
   else
-    # Take today by default
-    dateDay="$(date +"%Y%m%d")"
+    dateDay="$(date -d "$dateNow" "+%Y-%m-%d")"
   fi
   # Let's check if the filename contain the chosen date:
   if [[ ! "${1}" =~ ^$dateDay-.*+$ ]]; then
@@ -687,7 +686,7 @@ function main() {
       for (( i=0; i<"${#fileList[@]}"; i++ ))
       do
         # Check file not today for the clean
-        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date +"%Y%m%d")" "1")"
+        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date -d "$dateNow" "+%Y-%m-%d")")"
         if [[ -n "$fileMatch" ]]; then
           # There was a match
           aFileToClean+=("${fileList[$i]}")
