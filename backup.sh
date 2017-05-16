@@ -48,6 +48,9 @@ dependencies='date dirname sha1sum cut rev tar rsync'
 flagGetOpts=0
 # dateNow="$(date +"%Y%m%d-%H:%M:%S")"
 dateNow="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+# simple timing
+# Convert dateNow to %s timestamp
+timeStart="$(date -d "$dateNow" "+%s")"
 logPath="$(dirname "$0")"
 lockHash="$(echo "$@" | sha1sum | cut -d ' ' -f1)"
 lockFile="$logPath/${lockHash}.lock"
@@ -55,9 +58,6 @@ logFile="$(echo "$0" | rev | cut -d"/" -f1 | rev)"
 # This is for the actual run
 logFileActual="$logPath/${lockHash}-${logFile%.*}-${dateNow}.log"
 logFile="$logPath/${logFile%.*}.log"
-# simple timing
-# Convert dateNow to %s timestamp
-timeStart="$(date -d "$dateNow" "+%s")"
 
 # TAR archive infos
 tarParams="-Jcf"
@@ -88,7 +88,7 @@ OPTIONS:
       "TARB":       Create a tarball. (LOCAL ONLY)
       "SYNC":       Sync 2 directory (default).
                     Note that the sync is 1 way (from -> to).
-      "CLEAN":      Clean old tarball, (keep only today).
+      "CLEAN":      Clean old tarball, (keep only today's backup).
       "SYNCRM":     Delete the missing (cleaned) files on the reference.
   -l, --limit       Limit the bandwith available:
       0             Is no limit (default).
@@ -626,7 +626,7 @@ function main() {
       sizeMoved=$(rsync -a --stats --dry-run "$rsyncBwLimit" "$cmdFrom" "$cmdTo" | grep -i 'Total transferred file size: ' | cut -d':' -f2 | cut -d' ' -f2)
       sizeMoved=${sizeMoved//,/}
       local diskAvail=''
-      diskAvail=$(\df --output=avail -B1 "$cmdTo" | grep -v 'Avail')
+      diskAvail=$(df --output=avail -B1 "$cmdTo" | grep -v 'Avail')
       if [[ $diskAvail -lt $sizeMoved ]]; then
         log "Disk space avail ($diskAvail) is not enought for ($sizeMoved) !!" "ALERT"
         exitWrapper 13
