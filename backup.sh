@@ -47,7 +47,7 @@
 dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
 flagGetOpts=0
-# dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+# https://xkcd.com/1179/
 dateNow="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 # simple timing
 # Convert dateNow to %s timestamp
