@@ -157,6 +157,8 @@ function log() {
     # Clear earlyLog after displaying it
     unset earlyLog
   fi
+  # test if it is writeable
+  # Export the create / open / check file outside
   # Ouput message + verbose level if set
   if [[ -n "$1" && -z "$2" ]]; then
     echo "${dateNow} ${idScriptCall} $1" >> "${logFileActual}" 2>&1
