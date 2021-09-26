@@ -100,12 +100,13 @@ OPTIONS:
   -c, --compression Define the tar compression method.
       ".tar"
       ".tar.gz"
-      ".tar.xz" <- Default
+      ".tar.xz" <-  Default
   -j, --jopts       Define / override the tar compression options.
       "-cf"
       "-czf"
-      "-Jcf"    <- Default
+      "-Jcf"    <-  Default
   -e, --email       Specify a email to contact if error.
+  -a, --archivename Define archive name instead of using location basename
 
 Examples:
   Sync 2 directory
@@ -531,9 +532,10 @@ getValidateCompressionOptions() {
   echo "$compressionOptions"
 }
 
+
 # GETOPTS {{{1
 # Get the param of the script.
-optspec=":f:t:c:j:m:l:-:evh"
+optspec=":f:t:c:j:a:m:l:-:evh"
 while getopts "$optspec" optchar; do
   flagGetOpts=1
   # Short options
@@ -590,6 +592,12 @@ while getopts "$optspec" optchar; do
       else
         echo "Bad tar compressionOption $cmdCompressionOptions"
         exit 16
+      fi
+      ;;
+    a)
+      cmdArchiveName="$OPTARG"
+      if [[ -n "$cmdArchiveName" ]]; then
+        archiveName="$cmdArchiveName"
       fi
       ;;
     v)
@@ -663,6 +671,13 @@ while getopts "$optspec" optchar; do
             exit 16
           fi
           ;;
+        archivename)
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
+          cmdArchiveName="$val"
+          if [[ -n "$cmdArchiveName" ]]; then
+            archiveName="$cmdArchiveName"
+          fi
+          ;;
         *)
           echo "Unknown long option --${OPTARG}" >&2
           usage >&2;
@@ -686,6 +701,17 @@ elif [[ -z "${cmdFrom}" || -z "${cmdTo}" || -z "${cmdMode}" ]]; then
   exitWrapper 9
 
 fi
+
+# FUNCTION getArchiveName() {{{1
+function getArchiveName() {
+  local localArchiveName=''
+  if [[ -n $cmdArchiveName ]]; then
+    localArchiveName="$archiveName"
+  else
+    localArchiveName="$(basename "$cmdFrom")"
+  fi
+  echo "$localArchiveName"
+}
 
 # FUNCTION main() {{{1
 function main() {
@@ -764,8 +790,10 @@ function main() {
       log "MODE TARBALL"
       # Delete the last / if any
       cmdFrom="${cmdFrom%/}"
+      archiveName="$(getArchiveName)"
+      log "ArchiveName: $archiveName"
       pathName="$(basename "$cmdFrom")"
-      tarName="$(getUniqueName "$pathName")${tarExtension}"
+      tarName="$(getUniqueName "$archiveName")${tarExtension}"
       sizeFileDeleted=0
       log "Archive name: $tarName"
       log "$(tar "${tarParams}" "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
@@ -774,17 +802,18 @@ function main() {
       ;;
     'CLEAN')
       log "MODE CLEAN"
-      pathName="$(basename "$cmdFrom")"
+      archiveName="$(getArchiveName)"
+      log "ArchiveName: $archiveName"
       sizeFileDeleted=0
       # List all files by name
       IFS=$'\n'
-      fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*${tarExtension}"))
+      fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${archiveName}*${tarExtension}"))
       unset IFS
       declare -a aFileToClean
       for (( i=0; i<"${#fileList[@]}"; i++ ))
       do
         # Check file not today for the clean
-        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date -d "$dateNow" "+%Y-%m-%d")")"
+        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${archiveName}_$(date -d "$dateNow" "+%Y-%m-%d")")"
         if [[ -n "$fileMatch" ]]; then
           # There was a match
           aFileToClean+=("${fileList[$i]}")

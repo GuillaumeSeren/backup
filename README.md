@@ -68,6 +68,7 @@ CODE | OPTION    | DESCRIPTION
 `-e` | `email`   | Email to use in case of error.
 -c | compression | Define the tar compression format
 -j | jcopts      | Define the tar compression options
+-a | archivename | Define the archive name
 
 ## Testing env
 Some idea for test the script (@TODO create a test script !)
