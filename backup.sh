@@ -9,6 +9,8 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Add stdout log for systemd support
+# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Add version of the script in the log.
 # @TODO: Refactor main to *only* call functions (and not process).
 # @TODO: Function to check used space before doing archive, log size.
@@ -16,7 +18,6 @@
 # @TODO: Use tee to copy echo ouput and add it to log
 # @TODO: Add speed stat mo/s ko/s go/s in the log.
 # @TODO: Move log to /var/log + package + logrotate
-# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Add a way to get the rsync/tar status.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Count the files on a given period (day/week/month/year).
