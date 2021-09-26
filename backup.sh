@@ -340,6 +340,8 @@ function getValidateTo() {
   local urlType=""
   urlType="$(getUrlType "$to")"
   if [[ "$urlType" == "local" ]]; then
+    # We may also need to check if it is a mount point and if it is check it is
+    # mounted before checking permission, like with nfs / gluster
     # Now test if the target is available
     if [[ -r "$to" && -w "$to" ]]; then
       # target is valid
