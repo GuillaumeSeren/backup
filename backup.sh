@@ -42,6 +42,8 @@
 # 12 Error in statusCall
 # 13 Disk avail is not enought for the sizeMoved by rsync
 # 14 The getFileTypeNotInPeriod filename is missing
+# 15 Compression method is bad
+# 15 Compression option is bad
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
@@ -95,6 +97,14 @@ OPTIONS:
       0             Is no limit (default).
       By default the value will be in KiB.
       You can specify other suffixes see rsync man page.
+  -c, --compression Define the tar compression method.
+      ".tar"
+      ".tar.gz"
+      ".tar.xz" <- Default
+  -j, --jopts       Define / override the tar compression options.
+      "-cf"
+      "-czf"
+      "-Jcf"    <- Default
   -e, --email       Specify a email to contact if error.
 
 Examples:
@@ -500,9 +510,30 @@ function getRsyncBwLimit() {
   echo "${rsyncBwLimit}"
 }
 
+# FUNCTION getValidateCompression() {{{1
+function getValidateCompression() {
+  local compression=''
+  # Compression is .tar.gz or .tar, so it shoud start with .
+  if [[ -n $1 &&
+        ${1:0:1} == '.' ]]; then
+    compression="$1"
+  fi
+  echo "$compression"
+}
+
+# FUNCTION getValidateCompressionOption() {{{1
+getValidateCompressionOptions() {
+  local compressionOptions=''
+  if [[ -n $1 &&
+        ${1:0:1} == '-' ]]; then
+    compressionOptions="$1"
+  fi
+  echo "$compressionOptions"
+}
+
 # GETOPTS {{{1
 # Get the param of the script.
-optspec=":f:t:m:l:-:evh"
+optspec=":f:t:c:j:m:l:-:evh"
 while getopts "$optspec" optchar; do
   flagGetOpts=1
   # Short options
@@ -542,6 +573,24 @@ while getopts "$optspec" optchar; do
     e)
       cmdMail="$OPTARG"
       checkDependencies "mail"
+      ;;
+    c)
+      cmdCompression="$OPTARG"
+      if [[ -n "$(getValidateCompression "$cmdCompression")" ]]; then
+        tarExtension="$cmdCompression"
+      else
+        echo "Bad tar compression $cmdCompression"
+        exit 15
+      fi
+      ;;
+    j)
+      cmdCompressionOptions="$OPTARG"
+      if [[ -n "$(getValidateCompressionOptions "$cmdCompressionOptions")" ]]; then
+        tarParams="$cmdCompressionOptions"
+      else
+        echo "Bad tar compressionOption $cmdCompressionOptions"
+        exit 16
+      fi
       ;;
     v)
       cmdVerbose=1
@@ -594,6 +643,26 @@ while getopts "$optspec" optchar; do
           cmdMail="$val"
           checkDependencies "mail"
           ;;
+        compression)
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
+          cmdCompression="$val"
+          if [[ -n "$(getValidateCompression "$cmdCompression")" ]]; then
+            tarExtension="$cmdCompression"
+          else
+            echo "Bad tar compression $cmdCompression"
+            exit 15
+          fi
+          ;;
+        jcopts)
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
+          cmdCompressionOptions="$val"
+          if [[ -n "$(getValidateCompressionOptions "$cmdCompressionOptions")" ]]; then
+            tarParams="$cmdCompressionOptions"
+          else
+            echo "Bad tar compressionOption $cmdCompressionOptions"
+            exit 16
+          fi
+          ;;
         *)
           echo "Unknown long option --${OPTARG}" >&2
           usage >&2;
@@ -625,6 +694,8 @@ function main() {
   idScriptCall="$$"
   log "Save $cmdFrom to $cmdTo"
   log "Check dependencies: ${dependencies}" "VERBOSE"
+  log "Compression: $cmdCompression"
+  log "CompressionOptions: $cmdCompressionOptions"
   checkDependencies "$dependencies"
   # local cmdMode=''
   cmdMode=$(getMode "${cmdMode}")
