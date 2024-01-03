@@ -9,6 +9,8 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO: Add stdout log for systemd support
+# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Add version of the script in the log.
 # @TODO: Refactor main to *only* call functions (and not process).
 # @TODO: Function to check used space before doing archive, log size.
@@ -16,7 +18,6 @@
 # @TODO: Use tee to copy echo ouput and add it to log
 # @TODO: Add speed stat mo/s ko/s go/s in the log.
 # @TODO: Move log to /var/log + package + logrotate
-# @TODO: Add support for relative path to getValidateTo/From()
 # @TODO: Add a way to get the rsync/tar status.
 # @TODO: We need better test over ssh before rm/add.
 # @TODO: Count the files on a given period (day/week/month/year).
@@ -41,12 +42,14 @@
 # 12 Error in statusCall
 # 13 Disk avail is not enought for the sizeMoved by rsync
 # 14 The getFileTypeNotInPeriod filename is missing
+# 15 Compression method is bad
+# 15 Compression option is bad
 
 # Default variables {{{1
 dependencies='date dirname sha1sum cut rev tar rsync'
 # Flags :
 flagGetOpts=0
-# dateNow="$(date +"%Y%m%d-%H:%M:%S")"
+# https://xkcd.com/1179/
 dateNow="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 # simple timing
 # Convert dateNow to %s timestamp
@@ -94,7 +97,16 @@ OPTIONS:
       0             Is no limit (default).
       By default the value will be in KiB.
       You can specify other suffixes see rsync man page.
+  -c, --compression Define the tar compression method.
+      ".tar"
+      ".tar.gz"
+      ".tar.xz" <-  Default
+  -j, --jopts       Define / override the tar compression options.
+      "-cf"
+      "-czf"
+      "-Jcf"    <-  Default
   -e, --email       Specify a email to contact if error.
+  -a, --archivename Define archive name instead of using location basename
 
 Examples:
   Sync 2 directory
@@ -156,6 +168,8 @@ function log() {
     # Clear earlyLog after displaying it
     unset earlyLog
   fi
+  # test if it is writeable
+  # Export the create / open / check file outside
   # Ouput message + verbose level if set
   if [[ -n "$1" && -z "$2" ]]; then
     echo "${dateNow} ${idScriptCall} $1" >> "${logFileActual}" 2>&1
@@ -339,6 +353,8 @@ function getValidateTo() {
   local urlType=""
   urlType="$(getUrlType "$to")"
   if [[ "$urlType" == "local" ]]; then
+    # We may also need to check if it is a mount point and if it is check it is
+    # mounted before checking permission, like with nfs / gluster
     # Now test if the target is available
     if [[ -r "$to" && -w "$to" ]]; then
       # target is valid
@@ -495,9 +511,31 @@ function getRsyncBwLimit() {
   echo "${rsyncBwLimit}"
 }
 
+# FUNCTION getValidateCompression() {{{1
+function getValidateCompression() {
+  local compression=''
+  # Compression is .tar.gz or .tar, so it shoud start with .
+  if [[ -n $1 &&
+        ${1:0:1} == '.' ]]; then
+    compression="$1"
+  fi
+  echo "$compression"
+}
+
+# FUNCTION getValidateCompressionOption() {{{1
+getValidateCompressionOptions() {
+  local compressionOptions=''
+  if [[ -n $1 &&
+        ${1:0:1} == '-' ]]; then
+    compressionOptions="$1"
+  fi
+  echo "$compressionOptions"
+}
+
+
 # GETOPTS {{{1
 # Get the param of the script.
-optspec=":f:t:m:l:-:evh"
+optspec=":f:t:c:j:a:m:l:-:evh"
 while getopts "$optspec" optchar; do
   flagGetOpts=1
   # Short options
@@ -537,6 +575,30 @@ while getopts "$optspec" optchar; do
     e)
       cmdMail="$OPTARG"
       checkDependencies "mail"
+      ;;
+    c)
+      cmdCompression="$OPTARG"
+      if [[ -n "$(getValidateCompression "$cmdCompression")" ]]; then
+        tarExtension="$cmdCompression"
+      else
+        echo "Bad tar compression $cmdCompression"
+        exit 15
+      fi
+      ;;
+    j)
+      cmdCompressionOptions="$OPTARG"
+      if [[ -n "$(getValidateCompressionOptions "$cmdCompressionOptions")" ]]; then
+        tarParams="$cmdCompressionOptions"
+      else
+        echo "Bad tar compressionOption $cmdCompressionOptions"
+        exit 16
+      fi
+      ;;
+    a)
+      cmdArchiveName="$OPTARG"
+      if [[ -n "$cmdArchiveName" ]]; then
+        archiveName="$cmdArchiveName"
+      fi
       ;;
     v)
       cmdVerbose=1
@@ -589,6 +651,33 @@ while getopts "$optspec" optchar; do
           cmdMail="$val"
           checkDependencies "mail"
           ;;
+        compression)
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
+          cmdCompression="$val"
+          if [[ -n "$(getValidateCompression "$cmdCompression")" ]]; then
+            tarExtension="$cmdCompression"
+          else
+            echo "Bad tar compression $cmdCompression"
+            exit 15
+          fi
+          ;;
+        jcopts)
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
+          cmdCompressionOptions="$val"
+          if [[ -n "$(getValidateCompressionOptions "$cmdCompressionOptions")" ]]; then
+            tarParams="$cmdCompressionOptions"
+          else
+            echo "Bad tar compressionOption $cmdCompressionOptions"
+            exit 16
+          fi
+          ;;
+        archivename)
+          val="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
+          cmdArchiveName="$val"
+          if [[ -n "$cmdArchiveName" ]]; then
+            archiveName="$cmdArchiveName"
+          fi
+          ;;
         *)
           echo "Unknown long option --${OPTARG}" >&2
           usage >&2;
@@ -613,6 +702,17 @@ elif [[ -z "${cmdFrom}" || -z "${cmdTo}" || -z "${cmdMode}" ]]; then
 
 fi
 
+# FUNCTION getArchiveName() {{{1
+function getArchiveName() {
+  local localArchiveName=''
+  if [[ -n $cmdArchiveName ]]; then
+    localArchiveName="$archiveName"
+  else
+    localArchiveName="$(basename "$cmdFrom")"
+  fi
+  echo "$localArchiveName"
+}
+
 # FUNCTION main() {{{1
 function main() {
   local idScriptCall=''
@@ -620,6 +720,8 @@ function main() {
   idScriptCall="$$"
   log "Save $cmdFrom to $cmdTo"
   log "Check dependencies: ${dependencies}" "VERBOSE"
+  log "Compression: $cmdCompression"
+  log "CompressionOptions: $cmdCompressionOptions"
   checkDependencies "$dependencies"
   # local cmdMode=''
   cmdMode=$(getMode "${cmdMode}")
@@ -688,8 +790,10 @@ function main() {
       log "MODE TARBALL"
       # Delete the last / if any
       cmdFrom="${cmdFrom%/}"
+      archiveName="$(getArchiveName)"
+      log "ArchiveName: $archiveName"
       pathName="$(basename "$cmdFrom")"
-      tarName="$(getUniqueName "$pathName")${tarExtension}"
+      tarName="$(getUniqueName "$archiveName")${tarExtension}"
       sizeFileDeleted=0
       log "Archive name: $tarName"
       log "$(tar "${tarParams}" "${cmdTo}/${tarName}" -C "${cmdFrom%$pathName}" "${pathName}/")"
@@ -698,17 +802,18 @@ function main() {
       ;;
     'CLEAN')
       log "MODE CLEAN"
-      pathName="$(basename "$cmdFrom")"
+      archiveName="$(getArchiveName)"
+      log "ArchiveName: $archiveName"
       sizeFileDeleted=0
       # List all files by name
       IFS=$'\n'
-      fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${pathName}*${tarExtension}"))
+      fileList=($(find "$cmdTo"/ -maxdepth 1 -type f -name "${archiveName}*${tarExtension}"))
       unset IFS
       declare -a aFileToClean
       for (( i=0; i<"${#fileList[@]}"; i++ ))
       do
         # Check file not today for the clean
-        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${pathName}_$(date -d "$dateNow" "+%Y-%m-%d")")"
+        fileMatch="$(getFileNameNotOnDay "$(basename "${fileList[$i]}")" "${archiveName}_$(date -d "$dateNow" "+%Y-%m-%d")")"
         if [[ -n "$fileMatch" ]]; then
           # There was a match
           aFileToClean+=("${fileList[$i]}")

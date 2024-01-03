@@ -66,8 +66,38 @@ CODE | OPTION    | DESCRIPTION
 `-t` | `to`      | Location **to**.
 `-l` | `limit`   | Limit the bandwith allocated to rsync operation.
 `-e` | `email`   | Email to use in case of error.
+-c | compression | Define the tar compression format
+-j | jcopts      | Define the tar compression options
+-a | archivename | Define the archive name
 
+## Testing env
+Some idea for test the script (@TODO create a test script !)
 
+* Create some 2 directories like a / b
+* Create some content in the a directory
+* Generate some backups
+```
+# example
+$ bash backup.sh -f $PWD/a/ -t $PWD/b/ -m TARB
+
+# See the log
+$ less backup.log
+(..)
+2021-09-26T15:40:19Z 268404 Creation log file: ./b9ed2890af5fe0d5f460802b09c1d334f072fb65-backup-2021-09-26T15:40:19Z.log
+2021-09-26T15:40:19Z 268404 Save /home/gseren/src/free/github/guillaumeseren/backup/a/ to /home/gseren/src/free/github/guillaumeseren/backup/b/
+2021-09-26T15:40:19Z 268404 MODE TARB --bwlimit=0
+2021-09-26T15:40:19Z 268404 MODE TARBALL
+2021-09-26T15:40:19Z 268404 Archive name: a_2021-09-26T15:40:19Z.tar.xz
+2021-09-26T15:40:19Z 268404 TARB file size: 302006472
+2021-09-26T15:40:19Z 268404 duration (sec): 121
+
+# See the backup in b/
+$ ls b
+.rw-r--r-- 302M gseren gseren 2021-09-26 17:42 -N  a_2021-09-26T15:40:19Z.tar.xz
+
+# Override tar format and options
+$ bash backup.sh -f $PWD/a/ -t $PWD/b/ -m TARB -c '.tar' -j '-cf'
+```
 ## Usage & Installation
 You can clone this repos in your home directory, like:
 ```
